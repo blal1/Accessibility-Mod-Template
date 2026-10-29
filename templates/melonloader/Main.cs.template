@@ -11,8 +11,8 @@ using UnityEngine;
 // into OnSceneWasLoaded behind a "_patched" flag (first scene load).
 // ============================================================================
 
-[assembly: MelonInfo(typeof(NAMESPACE.Main), "MODNAME", "1.0.0", "AUTOR")]
-[assembly: MelonGame("ENTWICKLER", "SPIELNAME")]
+[assembly: MelonInfo(typeof(NAMESPACE.Main), "MODNAME", "1.0.0", "AUTHOR")]
+[assembly: MelonGame("DEVELOPER", "GAME_NAME")]
 
 namespace NAMESPACE
 {

@@ -3,7 +3,7 @@ using BepInEx.Configuration;
 namespace NAMESPACE
 {
     /// <summary>
-    /// Mod settings stored with the BepInEx ConfigFile (BepInEx/config/com.AUTOR.MODNAME.cfg), persisted between sessions.
+    /// Mod settings stored with the BepInEx ConfigFile (BepInEx/config/com.AUTHOR.MODNAME.cfg), persisted between sessions.
     /// This class only holds the VALUES. The accessible settings menu is templates/shared/AccessibleModSettings.cs.template
     /// (an AccessibleUI opened with Ctrl+F11), so it follows the same focus, key and localization rules as every screen.
     ///

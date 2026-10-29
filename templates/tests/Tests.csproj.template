@@ -4,7 +4,7 @@
        - LocalizationTests: every key has English text, translations keep placeholders, nothing speaks a literal.
        - ArchitectureTests: only AccessibilityMgr speaks, only AccessibleKey/Main read raw keys.
        - GameCompatTests: every game member the mod names exists in the INSTALLED game build (needs GameDir).
-       Copy this folder to Tests\ at the project root and replace MODNAME, SPIELORDNER, SPIELNAME.
+       Copy this folder to Tests\ at the project root and replace MODNAME, GAME_FOLDER, GAME_NAME.
        See docs/05-quality-and-updates.md. Adapted from PTCGL Access (MIT, see THIRD-PARTY-NOTICES.md). -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -12,7 +12,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- The game folder: the "game" junction at the project root if present (docs/01-setup-and-tooling.md), else the path. -->
     <GameDir Condition="'$(GameDir)' == '' And Exists('$(MSBuildThisFileDirectory)..\game')">$(MSBuildThisFileDirectory)..\game</GameDir>
-    <GameDir Condition="'$(GameDir)' == ''">SPIELORDNER</GameDir>
+    <GameDir Condition="'$(GameDir)' == ''">GAME_FOLDER</GameDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,7 +34,7 @@
     </AssemblyAttribute>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>GameDataDir</_Parameter1>
-      <_Parameter2>SPIELNAME_Data</_Parameter2>
+      <_Parameter2>GAME_NAME_Data</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
 

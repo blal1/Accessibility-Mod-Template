@@ -656,6 +656,8 @@ If Tolk DLLs are missing, explain:
 
 For beginners: Tolk is a library that can communicate with various screen readers (NVDA, JAWS, etc.). Our mod uses Tolk to send text to your screen reader. Tolk.dll is the bridge, and nvdaControllerClient*.dll is specifically needed so NVDA can receive the text.
 
+Alternative: Prism instead of Tolk (one `prism.dll` next to the EXE, built with CMake). See appendix A, "Prism". Use one bridge, not both.
+
 ### Step 6: .NET SDK
 
 Question: Do you have the .NET SDK already installed?
@@ -1232,7 +1234,7 @@ Requires `ilspycmd` and `git`. Never push or share `decompiled\`.
 
 Reads `MelonLoader\Latest.log` and extracts the values the project needs:
 - Game Name and Game Developer (for the MelonGame attribute)
-- Runtime Type (net35 or net6: TargetFramework and the MelonLoader DLL folder `RUNTIME_ORDNER` in the csproj)
+- Runtime Type (net35 or net6: TargetFramework and the MelonLoader DLL folder `RUNTIME_FOLDER` in the csproj)
 - Game Type (Mono or Il2Cpp), Game Arch, Unity version and MelonLoader version, when the log has them
 
 It also warns about very old Unity versions (see `docs/appendix-c-legacy-unity.md`) and about a game path with non-ASCII characters.

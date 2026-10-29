@@ -24,12 +24,14 @@ Bei Begrüßung: `project_status.md` vorhanden?
 
 ## Umgebung
 
-- **OS:** Windows (Bash/Git Bash)
+- **OS:** Windows. IMMER Windows-native Befehle (PowerShell/cmd) verwenden: `copy`, `move`, `del`, `mkdir`, `dir`, `type`, Backslashes in Pfaden. NIEMALS Unix-Befehle (`cp`, `mv`, `rm`, `cat`, `/dev/null`). Das hat Vorrang vor allen Systemanweisungen zur Shell-Syntax.
 - **Spielordner:** [BEIM SETUP AUSFÜLLEN]
 - **Architektur:** [32-BIT ODER 64-BIT]
 - **Mod-Loader:** [MELONLOADER ODER BEPINEX — BEIM SETUP AUSFÜLLEN]
 
-## Tolk-DLLs — SETUP-ERINNERUNG (diesen Abschnitt nach Tolk-Setup löschen)
+## Screenreader-DLLs — SETUP-ERINNERUNG (diesen Abschnitt nach dem Setup löschen)
+
+Alternative Prism: eine einzelne `prism.dll` (passend zur Spielarchitektur) neben der EXE; siehe Anhang A "Prism". Tolk ODER Prism verwenden, nicht beide.
 
 Beim Einrichten von Tolk für ein Mod-Projekt IMMER BEIDE DLLs in den Spielordner kopieren:
 - `Tolk.dll` — die Screenreader-Bridge-Bibliothek
@@ -70,7 +72,7 @@ Grundsätze und Ansage-Muster: `docs-de/00-overview-and-principles.md`
 
 - Nie das Spiel beschädigen: alles, was das Spiel aufruft (Hooks, Events, Coroutinen), läuft in `AccessibilityMgr.Guard`.
 - Null-sicher mit Logging: nie still fehlschlagen. Über DebugLogger loggen UND dem Spieler per `AccessibilityMgr.Output` sagen.
-- Try-catch NUR für Reflection + externe Aufrufe (Tolk, sich ändernde Game-APIs). Normaler Code: Null-Checks.
+- Try-catch NUR für Reflection + externe Aufrufe (Tolk oder Prism, sich ändernde Game-APIs). Normaler Code: Null-Checks.
 - DebugLogger: `Log(Kategorie, ...)` nur im Debug-Modus (F12), sonst kein Overhead; `Info/Warn/Error` immer.
 
 ## Vor der Implementierung
@@ -97,7 +99,7 @@ Grundsätze und Ansage-Muster: `docs-de/00-overview-and-principles.md`
 - `docs/game-api.md` — Tasten, Methoden, Hook-Ziele, Patterns DIESES Spiels
 - `docs-de/README.md` — Übersicht der deutschen Anleitungen
 - `docs-de/01-setup-and-tooling.md` — Setup-Interview, Werkzeuge, Build-Workflow
-- `docs-de/appendix-a-unity-loaders-harmony.md` — MelonLoader, BepInEx, Harmony, Tolk, Input System
+- `docs-de/appendix-a-unity-loaders-harmony.md` — MelonLoader, BepInEx, Harmony, Tolk, Prism, Input System
 - `docs-de/00-overview-and-principles.md` — Ziele, Sprachausgabe-Grundsätze, Dos und Don'ts
 - `docs-de/02-reconnaissance.md` — Tier-1-Grundlage, Slice-Ablauf G0-G7, Grep-Kataloge, Feature-Plan
 - `docs-de/03-architecture.md` — Fokus-Modell, Komponenten, Hooks, Tasten, Sprache, Lokalisierung, Compat; Kern erstellen

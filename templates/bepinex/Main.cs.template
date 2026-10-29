@@ -18,7 +18,7 @@ namespace NAMESPACE
     /// Mod entry point: initializes screen reader, settings, the AccessibilityMgr, and applies every hook
     /// with per-class failure isolation (Compat). Then forwards every frame to AccessibilityMgr.Update().
     /// </summary>
-    [BepInPlugin("com.AUTOR.MODNAME", "MODNAME", "1.0.0")]
+    [BepInPlugin("com.AUTHOR.MODNAME", "MODNAME", "1.0.0")]
     public class Main : BaseUnityPlugin
     {
         /// <summary>Debug mode: DebugLogger.Log(...) lines and every spoken text go to the log. Toggle with F12.</summary>
@@ -36,7 +36,7 @@ namespace NAMESPACE
             ScreenReader.Initialize();
             ModConfig.Initialize(Config);
             AccessibilityMgr.Initialize(asm);
-            _harmony = new HarmonyLib.Harmony("com.AUTOR.MODNAME");
+            _harmony = new HarmonyLib.Harmony("com.AUTHOR.MODNAME");
             Compat.PatchAll(_harmony, asm);
             Compat.ScanStatics(asm);
             Compat.ReportStartup();

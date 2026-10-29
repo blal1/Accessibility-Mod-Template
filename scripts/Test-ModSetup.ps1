@@ -392,7 +392,7 @@ if ($csprojFiles.Count -eq 0) {
 if ($csprojPath) {
     $csproj = Get-Content $csprojPath -Raw
 
-    $placeholders = @("TARGET_FRAMEWORK", "SPIELORDNER", "SPIELNAME", "RUNTIME_ORDNER", ">MODNAME<", ">NAMESPACE<") |
+    $placeholders = @("TARGET_FRAMEWORK", "GAME_FOLDER", "GAME_NAME", "RUNTIME_FOLDER", ">MODNAME<", ">NAMESPACE<") |
         Where-Object { $csproj.Contains($_) } | ForEach-Object { $_.Trim('<', '>') }
     if ($placeholders) {
         Write-Check "csproj placeholders replaced" "ERROR" "Still there: $($placeholders -join ', ')"
@@ -449,7 +449,7 @@ if ($mainFile) {
     $main = Get-Content $mainFile -Raw
     if ($loader -eq "MelonLoader") {
         if ($main -match '\[assembly:\s*MelonGame\s*\(\s*"([^"]*)"\s*,\s*"([^"]*)"\s*\)\s*\]') {
-            if ($matches[1] -eq "ENTWICKLER" -or $matches[2] -eq "SPIELNAME") {
+            if ($matches[1] -eq "DEVELOPER" -or $matches[2] -eq "GAME_NAME") {
                 Write-Check "MelonGame attribute" "ERROR" "Placeholders not replaced"
                 Write-Fix "Copy Developer and Game Name exactly from the log: .\scripts\Get-MelonLoaderInfo.ps1"
             } else {
@@ -461,7 +461,7 @@ if ($mainFile) {
         }
     } elseif ($loader -eq "BepInEx") {
         if ($main -match '\[BepInPlugin\s*\(\s*"([^"]*)"') {
-            if ($matches[1] -match 'AUTOR|MODNAME') {
+            if ($matches[1] -match 'AUTHOR|MODNAME') {
                 Write-Check "BepInPlugin attribute" "WARNING" "GUID still has a placeholder: $($matches[1])"
                 Write-Fix "Use a unique reverse-domain GUID, e.g. com.yourname.mygameaccess."
             } else {
@@ -590,8 +590,8 @@ Write-Host ""
 $testsProj = Get-ChildItem -LiteralPath (Join-Path $ProjectPath "Tests") -Filter "*.csproj" -File -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($testsProj) {
     $testsText = Get-Content $testsProj.FullName -Raw
-    if ($testsText -match 'MODNAME|SPIELNAME|>SPIELORDNER<') {
-        Write-Check "Tests project" "WARNING" "$($testsProj.Name) still has placeholders (MODNAME, SPIELORDNER or SPIELNAME)"
+    if ($testsText -match 'MODNAME|GAME_NAME|>GAME_FOLDER<') {
+        Write-Check "Tests project" "WARNING" "$($testsProj.Name) still has placeholders (MODNAME, GAME_FOLDER or GAME_NAME)"
         Write-Fix "Replace them; the game compatibility test needs the game path."
     } else {
         Write-Check "Tests project" "OK" "Tests\$($testsProj.Name) - run: dotnet test Tests"

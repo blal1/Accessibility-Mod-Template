@@ -1,4 +1,4 @@
-# Appendix A: Unity Loaders, Harmony, Tolk
+# Appendix A: Unity Loaders, Harmony, Tolk, Prism
 
 Compact overview: MelonLoader, BepInEx, Harmony, Tolk, and Unity input. The architecture these serve is in `docs/03-architecture.md`; the templates in `templates/melonloader/` and `templates/bepinex/` already contain everything shown here.
 
@@ -308,6 +308,25 @@ public class DamagePatch
 - `___fieldName` - Private fields (3 underscores!)
 
 ---
+
+## Prism (Screen Reader, alternative to Tolk)
+
+[Prism](https://github.com/ethindp/prism) is a newer bridge with the same role as Tolk: one DLL that picks the best available output (NVDA, JAWS, SAPI, ...). Use either one, not both. Pokemon TCG Live Access uses Prism and is a working reference (MIT): its `Accessibility/Prism.cs` holds the P/Invoke declarations and `Accessibility/ScreenReader.cs` the wrapper.
+
+### Getting the DLL
+
+- Build it with CMake: `cmake -B build -A x64` then `cmake --build build --config Release` (use `-A Win32` for a 32-bit game).
+- Copy `prism.dll` next to the game EXE. Its architecture must match the game's; `scripts/Test-ModSetup.ps1` checks it.
+
+### Call sequence
+
+1. `prism_init(NULL)` returns a context. Pass NULL for the config: the config struct grows between Prism versions, so mirroring it in C# breaks on every update.
+2. `prism_registry_create_best(ctx)` returns the best backend for this machine.
+3. `prism_backend_initialize(backend)`: accept `Ok` and `AlreadyInitialized`.
+4. `prism_backend_output(backend, text, interrupt)` to speak (speech and braille), `prism_backend_stop(backend)` to silence.
+5. On exit: `prism_backend_free(backend)`, then `prism_shutdown(ctx)`.
+
+Every export uses the Cdecl calling convention. Catch `DllNotFoundException` when loading, log it and keep the mod running without speech: a missing DLL must never break the game. As with Tolk, only `AccessibilityMgr` talks to the wrapper.
 
 ## Tolk (Screen Reader)
 

@@ -9,7 +9,7 @@
     - Game Type (Mono or Il2Cpp) and Game Arch, if the log has them
     - Unity version and MelonLoader version
 
-    Prints the ready-to-copy MelonGame attribute and the csproj values (TargetFramework, RUNTIME_ORDNER).
+    Prints the ready-to-copy MelonGame attribute and the csproj values (TargetFramework, RUNTIME_FOLDER).
     Output is screen-reader friendly: one value per line, no tables.
     See docs/01-setup-and-tooling.md, "CRITICAL: Before First Build - Check Log!".
 
@@ -107,12 +107,12 @@ $runtimeKey = if ($runtime) { $runtime.ToLower() } else { "" }
 switch -Regex ($runtimeKey) {
     "^net35$" {
         Write-Host "TargetFramework (csproj): <TargetFramework>net472</TargetFramework>"
-        Write-Host "RUNTIME_ORDNER (csproj): net35  (MelonLoader DLLs from MelonLoader\net35\)"
+        Write-Host "RUNTIME_FOLDER (csproj): net35  (MelonLoader DLLs from MelonLoader\net35\)"
         Write-Host "IMPORTANT: Use net472, NOT netstandard2.0. With netstandard2.0 the mod fails silently."
     }
     "^net6" {
         Write-Host "TargetFramework (csproj): <TargetFramework>net6.0</TargetFramework>"
-        Write-Host "RUNTIME_ORDNER (csproj): net6  (MelonLoader DLLs from MelonLoader\net6\)"
+        Write-Host "RUNTIME_FOLDER (csproj): net6  (MelonLoader DLLs from MelonLoader\net6\)"
     }
     "^$" {
         Write-Host "WARNING: Cannot determine TargetFramework, Runtime Type is missing."

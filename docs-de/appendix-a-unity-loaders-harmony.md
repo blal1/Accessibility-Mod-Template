@@ -1,4 +1,4 @@
-# Anhang A: Unity-Loader, Harmony, Tolk
+# Anhang A: Unity-Loader, Harmony, Tolk, Prism
 
 Deutsche Fassung von `docs/appendix-a-unity-loaders-harmony.md`.
 
@@ -310,6 +310,25 @@ public class DamagePatch
 - `___fieldName` - Private Felder (3 Unterstriche!)
 
 ---
+
+## Prism (Screenreader, Alternative zu Tolk)
+
+[Prism](https://github.com/ethindp/prism) ist eine neuere Brücke mit derselben Aufgabe wie Tolk: eine DLL, die die beste verfügbare Ausgabe wählt (NVDA, JAWS, SAPI, ...). Verwende eine von beiden, nicht beide. Pokemon TCG Live Access nutzt Prism und ist eine funktionierende Referenz (MIT): `Accessibility/Prism.cs` enthält die P/Invoke-Deklarationen, `Accessibility/ScreenReader.cs` den Wrapper.
+
+### DLL beschaffen
+
+- Mit CMake bauen: `cmake -B build -A x64`, dann `cmake --build build --config Release` (für ein 32-Bit-Spiel `-A Win32`).
+- `prism.dll` neben die Spiel-EXE kopieren. Ihre Architektur muss zum Spiel passen; `scripts/Test-ModSetup.ps1` prüft das.
+
+### Aufrufreihenfolge
+
+1. `prism_init(NULL)` liefert einen Kontext. Für die Konfiguration NULL übergeben: die Konfigurationsstruktur wächst zwischen Prism-Versionen, ein Nachbau in C# bricht bei jedem Update.
+2. `prism_registry_create_best(ctx)` liefert das beste Backend für diesen Rechner.
+3. `prism_backend_initialize(backend)`: `Ok` und `AlreadyInitialized` akzeptieren.
+4. `prism_backend_output(backend, text, interrupt)` zum Sprechen (Sprache und Braille), `prism_backend_stop(backend)` zum Stummschalten.
+5. Beim Beenden: `prism_backend_free(backend)`, dann `prism_shutdown(ctx)`.
+
+Alle Exporte nutzen die Aufrufkonvention Cdecl. Beim Laden `DllNotFoundException` abfangen, loggen und den Mod ohne Sprache weiterlaufen lassen: eine fehlende DLL darf das Spiel nie kaputt machen. Wie bei Tolk spricht nur `AccessibilityMgr` mit dem Wrapper.
 
 ## Tolk (Screenreader)
 

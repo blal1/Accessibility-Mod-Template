@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- WICHTIG: TargetFramework passend zum Spiel wählen!
-         Die meisten BepInEx Mono-Spiele: net472
-         Neuere Spiele mit .NET 6+: net6.0
-         Prüfe was andere BepInEx-Mods für dieses Spiel verwenden -->
+    <!-- IMPORTANT: choose the TargetFramework that matches the game!
+         Most BepInEx Mono games: net472
+         Newer games on .NET 6+: net6.0
+         Check what other BepInEx mods for this game use -->
     <TargetFramework>TARGET_FRAMEWORK</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
@@ -14,7 +14,7 @@
     <RootNamespace>NAMESPACE</RootNamespace>
   </PropertyGroup>
 
-  <!-- WICHTIG: Dekompilierte Dateien vom Build ausschließen! -->
+  <!-- IMPORTANT: keep decompiled game code and tooling out of the build! -->
   <ItemGroup>
     <Compile Remove="decompiled\**" />
     <Compile Remove="templates\**" />
@@ -22,90 +22,90 @@
     <Compile Remove="recon\**" />
   </ItemGroup>
 
-  <!-- Lokalisierung: Localization/<sprache>/<Feature>.txt (KEY<TAB>TEXT<TAB>KOMMENTAR) werden in die DLL eingebettet.
-       LocalizationUtils liest sie als Ressourcen "Localization/<sprache>/<Datei>". Siehe docs/03-architecture.md -->
+  <!-- Localization: Localization/<language>/<Feature>.txt (KEY<TAB>TEXT<TAB>COMMENT) are embedded in the DLL.
+       LocalizationUtils reads them as resources "Localization/<language>/<file>". See docs/03-architecture.md -->
   <ItemGroup>
     <EmbeddedResource Include="Localization\**\*.txt" LogicalName="Localization/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <!-- BepInEx Referenzen -->
+  <!-- BepInEx references -->
   <ItemGroup>
     <Reference Include="BepInEx">
-      <HintPath>SPIELORDNER\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>GAME_FOLDER\BepInEx\core\BepInEx.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>SPIELORDNER\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>GAME_FOLDER\BepInEx\core\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
-  <!-- Unity Referenzen (aus dem Spiel-Managed-Ordner) -->
+  <!-- Unity references (from the game's Managed folder) -->
   <ItemGroup>
     <Reference Include="UnityEngine">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <!-- TextMeshPro: most Unity games show text with it (ReflectionHelper and AccessibleFEATURENAME use TMPro.TMP_Text). Remove if the game has no Unity.TextMeshPro.dll. -->
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
-  <!-- Spiel-Assembly -->
+  <!-- Game assembly -->
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
-  <!-- Nach Build: DLL in BepInEx plugins-Ordner kopieren -->
+  <!-- After build: copy the DLL to the BepInEx plugins folder -->
   <Target Name="CopyToPlugins" AfterTargets="Build">
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="SPIELORDNER\BepInEx\plugins\" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="GAME_FOLDER\BepInEx\plugins\" />
     <Message Text="Copied $(TargetFileName) to BepInEx plugins folder" Importance="High" />
   </Target>
 
 </Project>
 
 <!--
-ANLEITUNG - Platzhalter ersetzen:
+HOW TO - replace the placeholders:
 
 1. TARGET_FRAMEWORK:
-   - Die meisten BepInEx Mono-Spiele: net472
-   - Neuere Spiele (.NET 6+): net6.0
-   - Prüfe was andere BepInEx-Mods verwenden oder die DLLs in BepInEx/core/
+   - Most BepInEx Mono games: net472
+   - Newer games (.NET 6+): net6.0
+   - Check what other BepInEx mods use, or the DLLs in BepInEx/core/
 
-2. SPIELORDNER: Der volle Pfad zum Spiel, z.B.:
-   C:\Program Files (x86)\Steam\steamapps\common\Spielname
+2. GAME_FOLDER: the full path to the game, e.g.:
+   C:\Program Files (x86)\Steam\steamapps\common\GameName
 
-3. SPIELNAME: Name des Spiels (für den _Data Ordner), z.B.:
+3. GAME_NAME: the game's name (for the _Data folder), e.g.:
    Pet Idle → Pet Idle_Data
 
-4. MODNAME und NAMESPACE: Dein Mod-Name, z.B.:
+4. MODNAME and NAMESPACE: your mod's name, e.g.:
    PetIdleAccessibility
 
-CHECKLISTE VOR BUILD:
-[ ] TargetFramework passend gewählt
-[ ] Alle SPIELORDNER ersetzt
-[ ] Alle SPIELNAME ersetzt
-[ ] decompiled und templates werden ausgeschlossen
-[ ] Output geht nach BepInEx\plugins\ (nicht Mods\)
+CHECKLIST BEFORE BUILD:
+[ ] TargetFramework chosen to match the game
+[ ] Every GAME_FOLDER replaced
+[ ] Every GAME_NAME replaced
+[ ] decompiled, templates, Tests and recon are excluded
+[ ] Output goes to BepInEx\plugins\ (not Mods\)
 -->

@@ -22,7 +22,9 @@ User:
 - **Architecture:** [32-BIT OR 64-BIT]
 - **Mod Loader if applicabel:** [MELONLOADER OR BEPINEX — FILL IN DURING SETUP, remove his placeholder in case no mod loader is needed]
 
-# Tolk DLLs — SETUP REMINDER (delete this section after Tolk setup is complete)
+# Screen reader DLLs — SETUP REMINDER (delete this section after setup is complete)
+
+Prism alternative: a single `prism.dll` (matching the game architecture) next to the EXE; see appendix A "Prism". Use Tolk OR Prism, not both.
 
 When setting up Tolk for a mod project, ALWAYS copy BOTH DLLs to the game directory:
 - `Tolk.dll` — screen reader bridge library
@@ -59,7 +61,7 @@ Principles and speech patterns: `docs/00-overview-and-principles.md`
 
 - Never break the game: everything the game calls into (hooks, events, coroutines) runs inside `AccessibilityMgr.Guard`.
 - Null-safety with logging: never silent. Log via DebugLogger AND tell the player via `AccessibilityMgr.Output`.
-- Try-catch ONLY for Reflection + external calls (Tolk, changing game APIs). Normal code: null-checks.
+- Try-catch ONLY for Reflection + external calls (Tolk or Prism, changing game APIs). Normal code: null-checks.
 - DebugLogger: `Log(category, ...)` only in debug mode (F12), zero overhead otherwise; `Info/Warn/Error` always.
 
 # Before Implementation
@@ -91,7 +93,7 @@ Principles and speech patterns: `docs/00-overview-and-principles.md`
 - `docs/04-building-screens.md` — one surface = one Accessible class; menus, lists, popups, boards; per-screen checklist
 - `docs/05-quality-and-updates.md` — error handling, performance, offline tests, game update workflow, acceptance
 - `docs/06-distribution.md` — packaging, publishing
-- `docs/appendix-a-unity-loaders-harmony.md` — MelonLoader, BepInEx, Harmony, Tolk, Input System
+- `docs/appendix-a-unity-loaders-harmony.md` — MelonLoader, BepInEx, Harmony, Tolk, Prism, Input System
 - `docs/appendix-b-unity-reflection.md` — Reflection (Unity)
 - `docs/appendix-c-legacy-unity.md` — Unity 5.x and older
 - `docs/appendix-d-other-engines.md` — Godot, Unreal, native, other .NET

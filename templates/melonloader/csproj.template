@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- WICHTIG: TargetFramework aus MelonLoader-Log bestimmen!
-         Runtime Type: net35 → net472 (NICHT netstandard2.0!)
+    <!-- IMPORTANT: take TargetFramework from the MelonLoader log!
+         Runtime Type: net35 → net472 (NOT netstandard2.0!)
          Runtime Type: net6  → net6.0 -->
     <TargetFramework>TARGET_FRAMEWORK</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
@@ -13,7 +13,7 @@
     <RootNamespace>NAMESPACE</RootNamespace>
   </PropertyGroup>
 
-  <!-- WICHTIG: Dekompilierte Dateien vom Build ausschließen! -->
+  <!-- IMPORTANT: keep decompiled game code and tooling out of the build! -->
   <ItemGroup>
     <Compile Remove="decompiled\**" />
     <Compile Remove="templates\**" />
@@ -21,98 +21,98 @@
     <Compile Remove="recon\**" />
   </ItemGroup>
 
-  <!-- Lokalisierung: Localization/<sprache>/<Feature>.txt (KEY<TAB>TEXT<TAB>KOMMENTAR) werden in die DLL eingebettet.
-       LocalizationUtils liest sie als Ressourcen "Localization/<sprache>/<Datei>". Siehe docs/03-architecture.md -->
+  <!-- Localization: Localization/<language>/<Feature>.txt (KEY<TAB>TEXT<TAB>COMMENT) are embedded in the DLL.
+       LocalizationUtils reads them as resources "Localization/<language>/<file>". See docs/03-architecture.md -->
   <ItemGroup>
     <EmbeddedResource Include="Localization\**\*.txt" LogicalName="Localization/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <!-- MelonLoader Referenzen
-       WICHTIG: Ordner muss zu Runtime Type passen (net35/ oder net6/) -->
+  <!-- MelonLoader references
+       IMPORTANT: the folder must match the Runtime Type (net35/ or net6/) -->
   <ItemGroup>
     <Reference Include="MelonLoader">
-      <HintPath>SPIELORDNER\MelonLoader\RUNTIME_ORDNER\MelonLoader.dll</HintPath>
+      <HintPath>GAME_FOLDER\MelonLoader\RUNTIME_FOLDER\MelonLoader.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>SPIELORDNER\MelonLoader\RUNTIME_ORDNER\0Harmony.dll</HintPath>
+      <HintPath>GAME_FOLDER\MelonLoader\RUNTIME_FOLDER\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
-  <!-- Unity Referenzen (aus dem Spiel-Managed-Ordner) -->
+  <!-- Unity references (from the game's Managed folder) -->
   <ItemGroup>
     <Reference Include="UnityEngine">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <!-- TextMeshPro: most Unity games show text with it (ReflectionHelper and AccessibleFEATURENAME use TMPro.TMP_Text). Remove if the game has no Unity.TextMeshPro.dll. -->
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
-  <!-- Spiel-Assembly -->
+  <!-- Game assembly -->
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>GAME_FOLDER\GAME_NAME_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
-  <!-- Nach Build: DLL in Mods-Ordner kopieren -->
+  <!-- After build: copy the DLL to the Mods folder -->
   <Target Name="CopyToMods" AfterTargets="Build">
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="SPIELORDNER\Mods\" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="GAME_FOLDER\Mods\" />
     <Message Text="Copied $(TargetFileName) to Mods folder" Importance="High" />
   </Target>
 
 </Project>
 
 <!--
-ANLEITUNG - Platzhalter ersetzen:
+HOW TO - replace the placeholders:
 
 1. TARGET_FRAMEWORK:
-   - Prüfe MelonLoader-Log für "Runtime Type:"
-   - net35 → ersetze mit: net472 (NICHT netstandard2.0!)
-   - net6  → ersetze mit: net6.0
+   - Look for "Runtime Type:" in the MelonLoader log (scripts/Get-MelonLoaderInfo.ps1 prints it)
+   - net35 → replace with: net472 (NOT netstandard2.0!)
+   - net6  → replace with: net6.0
 
-   ACHTUNG: netstandard2.0 funktioniert NICHT für Mono/net35-Spiele!
-   Der Mod wird geladen aber nicht initialisiert (keine Fehlermeldung).
+   WARNING: netstandard2.0 does NOT work for Mono/net35 games!
+   The mod is loaded but never initialised (no error message).
 
-2. RUNTIME_ORDNER:
-   - net35 → ersetze mit: net35
-   - net6  → ersetze mit: net6
+2. RUNTIME_FOLDER:
+   - net35 → replace with: net35
+   - net6  → replace with: net6
 
-3. SPIELORDNER: Der volle Pfad zum Spiel, z.B.:
-   C:\Program Files (x86)\Steam\steamapps\common\Spielname
+3. GAME_FOLDER: the full path to the game, e.g.:
+   C:\Program Files (x86)\Steam\steamapps\common\GameName
 
-4. SPIELNAME: Name des Spiels (für den _Data Ordner), z.B.:
+4. GAME_NAME: the game's name (for the _Data folder), e.g.:
    Pet Idle → Pet Idle_Data
 
-5. MODNAME und NAMESPACE: Dein Mod-Name, z.B.:
+5. MODNAME and NAMESPACE: your mod's name, e.g.:
    PetIdleAccessibility
 
-CHECKLISTE VOR BUILD:
-[ ] TargetFramework passt zu Runtime Type aus Log
-[ ] RUNTIME_ORDNER passt zu Runtime Type
-[ ] Alle SPIELORDNER ersetzt
-[ ] Alle SPIELNAME ersetzt
-[ ] decompiled und templates werden ausgeschlossen
+CHECKLIST BEFORE BUILD:
+[ ] TargetFramework matches the Runtime Type in the log
+[ ] RUNTIME_FOLDER matches the Runtime Type
+[ ] Every GAME_FOLDER replaced
+[ ] Every GAME_NAME replaced
+[ ] decompiled, templates, Tests and recon are excluded
 -->

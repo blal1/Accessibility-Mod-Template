@@ -658,6 +658,8 @@ Falls die Tolk-DLLs fehlen, erkläre:
 
 Für Anfänger: Tolk ist eine Bibliothek, die mit verschiedenen Screenreadern (NVDA, JAWS usw.) sprechen kann. Unser Mod nutzt Tolk, um Text an deinen Screenreader zu schicken. Tolk.dll ist die Brücke, und nvdaControllerClient*.dll wird speziell gebraucht, damit NVDA den Text empfangen kann.
 
+Alternative: Prism statt Tolk (eine `prism.dll` neben der EXE, mit CMake gebaut). Siehe Anhang A, "Prism". Nur eine Brücke verwenden, nicht beide.
+
 ### Schritt 6: .NET SDK
 
 Frage: Hast du das .NET SDK bereits installiert?
@@ -1234,7 +1236,7 @@ Benötigt `ilspycmd` und `git`. `decompiled\` niemals pushen oder weitergeben.
 
 Liest `MelonLoader\Latest.log` und extrahiert die Werte, die das Projekt braucht:
 - Game Name und Game Developer (für das MelonGame-Attribut)
-- Runtime Type (net35 oder net6: TargetFramework und der MelonLoader-DLL-Ordner `RUNTIME_ORDNER` in der csproj)
+- Runtime Type (net35 oder net6: TargetFramework und der MelonLoader-DLL-Ordner `RUNTIME_FOLDER` in der csproj)
 - Game Type (Mono oder Il2Cpp), Game Arch, Unity-Version und MelonLoader-Version, sofern das Log sie enthält
 
 Außerdem warnt es vor sehr alten Unity-Versionen (siehe `docs-de/appendix-c-legacy-unity.md`) und vor einem Spielpfad mit Nicht-ASCII-Zeichen.
