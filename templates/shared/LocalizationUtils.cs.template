@@ -1,0 +1,125 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+namespace NAMESPACE
+{
+    /// <summary>
+    /// The mod speaks the GAME's language.
+    ///   Get(LocalizationKey.X)                     the mod's own words
+    ///   Format(LocalizationKey.X, a, b)            with {0} {1} placeholders (whole sentences, never glued fragments)
+    ///   GetGame("game_string_id", LocalizationKey.X)  the GAME's own string first (official, every language the game
+    ///                                              ships), the mod's text only as fallback
+    ///
+    /// Texts come from Localization/&lt;tag&gt;/*.txt embedded in the DLL (see csproj), for the game's current
+    /// language tag, falling back to English for a missing language or line. The language is re-read once a
+    /// second, so switching language in the game options takes effect without a restart.
+    ///
+    /// NEVER cache a translated string in a static field: it would keep the language active when first read.
+    /// See docs/03-architecture.md, "Localization".
+    /// </summary>
+    public static class LocalizationUtils
+    {
+        private const string FallbackLanguage = "en";
+
+        private static readonly Dictionary<string, LocalizationTable> _tables = new Dictionary<string, LocalizationTable>();
+        private static string _language = FallbackLanguage;
+        private static float _nextLanguageCheck;
+
+        public static string Language => _language;
+
+        public static string Get(LocalizationKey key)
+        {
+            if (TryGet(_language, key, out var text) || TryGet(FallbackLanguage, key, out text)) return text;
+            DebugLogger.Warn($"Localization: no text for {key}");
+            return key.Key;
+        }
+
+        public static string Format(LocalizationKey key, params object[] args)
+        {
+            var format = Get(key);
+            try { return string.Format(format, args); }
+            catch (FormatException)
+            {
+                // A broken translation must never cost the announcement: fall back to English.
+                DebugLogger.Warn($"Localization: bad placeholders in the '{_language}' text of {key}");
+                return string.Format(TryGet(FallbackLanguage, key, out var en) ? en : key.Key, args);
+            }
+        }
+
+        /// <summary>The game's own localized string, or the mod's fallback text if the game has none.</summary>
+        public static string GetGame(string gameStringId, LocalizationKey fallback)
+        {
+            string text = null;
+            try
+            {
+                // TODO: call the game's localizer, found during reconnaissance (docs/game-api.md "Localization"), e.g.
+                // text = GameLocalization.Instance?.GetString(gameStringId);
+            }
+            catch (Exception e) { DebugLogger.Warn($"Localization: game string {gameStringId} threw {e.GetType().Name}"); }
+            // Many games return the id or a "MISSING" marker for unknown ids: treat those as missing too.
+            if (string.IsNullOrWhiteSpace(text) || text == gameStringId) return Get(fallback);
+            return text;
+        }
+
+        /// <summary>Called every frame by AccessibilityMgr; asks the game for its language once a second.</summary>
+        public static void Update()
+        {
+            if (Time.unscaledTime < _nextLanguageCheck) return;
+            _nextLanguageCheck = Time.unscaledTime + 1f;
+            try
+            {
+                var tag = GetGameLanguageTag();
+                if (!string.IsNullOrEmpty(tag) && tag != _language)
+                {
+                    _language = tag;
+                    DebugLogger.Info($"Localization: game language is now '{_language}'");
+                }
+            }
+            catch { /* game's language manager not up yet: keep the previous language */ }
+        }
+
+        /// <summary>
+        /// The game's current language as the folder name under Localization/ ("en", "de", "fr"...).
+        /// TODO: read it from the game (docs/game-api.md "Localization") and map the game's format to the tag.
+        /// </summary>
+        private static string GetGameLanguageTag()
+        {
+            // Examples: return GameSettings.Instance.languageCode;              // already "de"
+            //           return MapUnityLanguage(Application.systemLanguage);    // last resort only
+            return FallbackLanguage;
+        }
+
+        // Locked: game event hooks may speak from a worker thread.
+        private static bool TryGet(string language, LocalizationKey key, out string text)
+        {
+            LocalizationTable table;
+            lock (_tables) table = LoadTable(language);
+            text = null;
+            return table != null && table.TryGet(key.Key, out text);
+        }
+
+        private static LocalizationTable LoadTable(string language)
+        {
+            if (_tables.TryGetValue(language, out var cached)) return cached;
+            LocalizationTable table = null;
+            var asm = typeof(LocalizationUtils).Assembly;
+            var prefix = $"Localization/{language}/";
+            foreach (var name in asm.GetManifestResourceNames())
+            {
+                if (!name.Replace('\\', '/').StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                using (var reader = new StreamReader(asm.GetManifestResourceStream(name)))
+                {
+                    if (table == null) table = new LocalizationTable();
+                    table.Add(reader.ReadToEnd());
+                }
+            }
+            DebugLogger.Info(table == null
+                ? $"Localization: no '{language}' text shipped, using English"
+                : $"Localization: loaded {table.Entries.Count} '{language}' lines");
+            _tables[language] = table;
+            return table;
+        }
+    }
+}

@@ -1,0 +1,99 @@
+using System.Collections.Generic;
+using HarmonyLib;
+using UnityEngine.UI;
+using static NAMESPACE.ReflectionHelper;
+
+namespace NAMESPACE
+{
+    /// <summary>
+    /// Accessibility for FEATURENAME. Reference shape for EVERY screen or popup (docs/04-building-screens.md):
+    ///
+    /// 1. One file per surface: Accessibility/Screens/&lt;Area&gt;/AccessibleFEATURENAME.cs, sealed, one instance.
+    ///    It comes from one row of the recon surface ledger (docs/02-reconnaissance.md): the row's entry/exit
+    ///    predicates become the hooks below, its controls become menu options or items.
+    /// 2. AccessibleScreen for a base screen (one at a time), AccessibleUI for a popup/overlay (stacked).
+    ///    For a UI: replace AccessibleScreen by AccessibleUI, SetScreen by ShowUI, ClearScreen by HideUI.
+    /// 3. Hooks are nested [HarmonyPatch] classes. They only hand the component to AccessibilityMgr
+    ///    (SetScreen / ClearScreen / ShowUI / HideUI) or call the component's own methods, inside a Guard.
+    /// 4. Nothing speaks or reads keys outside HandleInput / OnGainedFocus / the hooks.
+    /// 5. Every spoken text: LocalizationUtils (keys in LocalizationKey.FEATURENAME.cs + Localization/*/FEATURENAME.txt);
+    ///    the game's own label first when it has one.
+    /// 6. Actions go through the game's own path (button.onClick.Invoke()), never by faking state.
+    /// 7. Read LIVE game data on every key; cache object references only, never values.
+    /// </summary>
+    public sealed class AccessibleFEATURENAME : AccessibleScreen
+    {
+        private static readonly AccessibleFEATURENAME _instance = new AccessibleFEATURENAME();
+
+        // The game object this screen wraps (a reference, valid between the open and close hooks).
+        private GAMECLASS _game;
+        private AccessibleMenu _menu;
+
+        public void HandleInput()
+        {
+            if (_menu != null && _menu.HandleInput()) return;
+            // Feature keys (declared in AccessibleKey.FEATURENAME.cs), e.g.:
+            // if (AccessibleKey.FEATURENAME_READ_STATUS.IsPressed()) AccessibilityMgr.Output(this, ReadStatus());
+        }
+
+        public string GetHelp() => _menu != null ? _menu.GetHelp() : LocalizationUtils.Get(LocalizationKey.GLOBAL_PLEASE_WAIT);
+
+        public void OnGainedFocus() => _menu?.StartReading();
+
+        private void OnOpened(GAMECLASS game)
+        {
+            _game = game;
+            _menu = BuildMenu();
+            AccessibilityMgr.SetScreen(this); // announces via OnGainedFocus, or waits silently under an open UI
+        }
+
+        private void OnClosed(GAMECLASS game)
+        {
+            if (game != _game) return; // another instance closed
+            AccessibilityMgr.ClearScreen(this);
+            _game = null;
+            _menu = null;
+        }
+
+        private AccessibleMenu BuildMenu()
+        {
+            var menu = new AccessibleMenu(this, LocalizationUtils.Get(LocalizationKey.FEATURENAME_TITLE), goBackAction: null);
+            // Wrap the game's own buttons; label = the game's own text, read live:
+            // var play = GetPrivateField<Button>(_game, "playButton");     // exact name from decompiled/
+            // menu.AddOption(() => ButtonLabel(play), () => play.onClick.Invoke());
+            return menu;
+        }
+
+        // A button that cannot be pressed right now is still listed, and says so.
+        private static string ButtonLabel(Button button)
+        {
+            var label = button.GetComponentInChildren<TMPro.TMP_Text>()?.text ?? button.name;
+            return button.interactable ? label : $"{label}, {LocalizationUtils.Get(LocalizationKey.GLOBAL_DISABLED)}";
+        }
+
+        // ---- Hooks: the game tells us when this surface opens and closes. Names verified in decompiled/. ----
+
+        [HarmonyPatch(typeof(GAMECLASS), "OPEN_METHOD")]
+        private static class OpenHook
+        {
+            private static void Postfix(GAMECLASS __instance) =>
+                AccessibilityMgr.Guard("AccessibleFEATURENAME.OpenHook", () => _instance.OnOpened(__instance));
+        }
+
+        [HarmonyPatch(typeof(GAMECLASS), "CLOSE_METHOD")]
+        private static class CloseHook
+        {
+            private static void Postfix(GAMECLASS __instance) =>
+                AccessibilityMgr.Guard("AccessibleFEATURENAME.CloseHook", () => _instance.OnClosed(__instance));
+        }
+    }
+}
+
+// LocalizationKey.FEATURENAME.cs:
+//   public sealed partial class LocalizationKey
+//   {
+//       public static readonly LocalizationKey FEATURENAME_TITLE = new LocalizationKey(nameof(FEATURENAME_TITLE));
+//   }
+// Localization/en/FEATURENAME.txt  (and the same keys in every other language folder):
+//   TAG<TAB>TEXT<TAB>COMMENT
+//   FEATURENAME_TITLE<TAB>Feature title<TAB>Spoken when FEATURENAME opens

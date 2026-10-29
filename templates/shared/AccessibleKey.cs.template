@@ -1,0 +1,142 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace NAMESPACE
+{
+    /// <summary>
+    /// Every key the mod reacts to, declared ONCE with its EXACT modifiers (as in Hearthstone Access):
+    /// Shift+Up is never also Up, Ctrl+Enter is never also Enter.
+    ///
+    /// Rules (see docs/03-architecture.md, "Keys"):
+    /// - Never call Input.GetKeyDown in a feature: declare an AccessibleKey here and use KEY.IsPressed().
+    /// - Feature keys go in their own partial file next to the feature (AccessibleKey.Inventory.cs, ...)
+    ///   so the whole key map stays greppable and two features can't silently grab the same combination.
+    /// - Reuse the common keys below (CONFIRM, BACK, arrows, Home/End, numbers) so every screen feels the same.
+    /// - Only keys listed under "Safe Mod Keys" in docs/game-api.md may be added (never steal a game key).
+    /// - The key's spoken name (ToString) is localized, so help texts say "Press {0}" with the key as argument.
+    ///
+    /// INPUT BACKEND: this template reads UnityEngine.Input (legacy Input Manager).
+    /// If the game uses ONLY the new Input System package (legacy Input throws InvalidOperationException),
+    /// replace IsKeyDown / IsKeyHeld with Keyboard.current lookups and resolve LETTERS by the character they type
+    /// (Keyboard.current.FindKeyOnCurrentKeyboardLayout("a")), not by Key.A, which is the physical US position
+    /// (Q on AZERTY). See docs/appendix-a-unity-loaders-harmony.md, "Input System vs legacy Input".
+    /// </summary>
+    public sealed partial class AccessibleKey
+    {
+        #region Global (work on every screen)
+        /// <summary>Context-sensitive help: the focused component's keys. Any modifier.</summary>
+        public static readonly AccessibleKey HELP = new AccessibleKey(KeyCode.F1, anyModifiers: true);
+        /// <summary>Turns the whole mod (speech + keys) on and off, for sighted helpers and for debugging.</summary>
+        public static readonly AccessibleKey TOGGLE_ACCESSIBILITY = new AccessibleKey(KeyCode.F8);
+        /// <summary>Opens the mod settings menu (AccessibleModSettings).</summary>
+        public static readonly AccessibleKey OPEN_MOD_SETTINGS = new AccessibleKey(KeyCode.F11, ctrl: true);
+        // F12 is the debug-log toggle in Main (see DebugLogger). Pick keys from game-api.md "Safe Mod Keys".
+        #endregion
+
+        #region Common (every screen uses the same meaning)
+        public static readonly AccessibleKey CONFIRM = new AccessibleKey(KeyCode.Return);
+        public static readonly AccessibleKey SPACE = new AccessibleKey(KeyCode.Space);
+        public static readonly AccessibleKey BACK = new AccessibleKey(KeyCode.Backspace);
+        public static readonly AccessibleKey ESCAPE = new AccessibleKey(KeyCode.Escape);
+        #endregion
+
+        #region Menus and lists
+        public static readonly AccessibleKey READ_NEXT_MENU_OPTION = new AccessibleKey(KeyCode.DownArrow);
+        public static readonly AccessibleKey READ_PREV_MENU_OPTION = new AccessibleKey(KeyCode.UpArrow);
+        public static readonly AccessibleKey READ_NEXT_ITEM = new AccessibleKey(KeyCode.RightArrow);
+        public static readonly AccessibleKey READ_PREV_ITEM = new AccessibleKey(KeyCode.LeftArrow);
+        public static readonly AccessibleKey READ_FIRST_ITEM = new AccessibleKey(KeyCode.Home);
+        public static readonly AccessibleKey READ_LAST_ITEM = new AccessibleKey(KeyCode.End);
+        public static readonly AccessibleKey NEXT_SECTION = new AccessibleKey(KeyCode.Tab);
+        public static readonly AccessibleKey PREV_SECTION = new AccessibleKey(KeyCode.Tab, shift: true);
+        #endregion
+
+        #region Reading an item line by line
+        public static readonly AccessibleKey READ_NEXT_LINE = new AccessibleKey(KeyCode.DownArrow);
+        public static readonly AccessibleKey READ_PREV_LINE = new AccessibleKey(KeyCode.UpArrow);
+        public static readonly AccessibleKey READ_CUR_LINE = new AccessibleKey(KeyCode.UpArrow, shift: true);
+        public static readonly AccessibleKey READ_TO_END = new AccessibleKey(KeyCode.DownArrow, shift: true);
+        #endregion
+
+        // Feature keys: add a partial file per feature, e.g. AccessibleKey.FEATURENAME.cs:
+        //   public sealed partial class AccessibleKey
+        //   {
+        //       public static readonly AccessibleKey FEATURENAME_READ_STATUS = new AccessibleKey(KeyCode.S, ctrl: true);
+        //   }
+
+        private readonly KeyCode _keyCode;
+        private readonly bool _shift;
+        private readonly bool _ctrl;
+        private readonly bool _alt;
+        private readonly bool _anyModifiers;
+
+        private AccessibleKey(KeyCode keyCode, bool shift = false, bool ctrl = false, bool alt = false, bool anyModifiers = false)
+        {
+            _keyCode = keyCode;
+            _shift = shift;
+            _ctrl = ctrl;
+            _alt = alt;
+            _anyModifiers = anyModifiers;
+        }
+
+        /// <summary>True on the frame the key goes down with EXACTLY the declared modifiers.</summary>
+        public bool IsPressed()
+        {
+            if (!IsKeyDown(_keyCode)) return false;
+            return _anyModifiers || (IsHoldingShift() == _shift && IsHoldingCtrl() == _ctrl && IsHoldingAlt() == _alt);
+        }
+
+        /// <summary>
+        /// Number row or numpad 1..9 then 0 (= 10), for "jump to the Nth item". Null when none was pressed this frame.
+        /// Only without modifiers, so Shift+1 etc. stay free.
+        /// </summary>
+        public static int? TryGetPressedNumber()
+        {
+            if (IsHoldingShift() || IsHoldingCtrl() || IsHoldingAlt()) return null;
+            for (var i = 0; i <= 9; i++)
+            {
+                if (IsKeyDown(KeyCode.Alpha0 + i) || IsKeyDown(KeyCode.Keypad0 + i)) return i == 0 ? 10 : i;
+            }
+            return null;
+        }
+
+        public static bool IsHoldingShift() => IsKeyHeld(KeyCode.LeftShift) || IsKeyHeld(KeyCode.RightShift);
+
+        public static bool IsHoldingCtrl() => IsKeyHeld(KeyCode.LeftControl) || IsKeyHeld(KeyCode.RightControl);
+
+        public static bool IsHoldingAlt() => IsKeyHeld(KeyCode.LeftAlt) || IsKeyHeld(KeyCode.RightAlt);
+
+        /// <summary>The key as the player hears it in help texts ("Shift plus Up arrow"), localized.</summary>
+        public override string ToString()
+        {
+            var name = KeyName(_keyCode);
+            if (_ctrl) name = LocalizationUtils.Format(LocalizationKey.KEY_WITH_CTRL, name);
+            if (_alt) name = LocalizationUtils.Format(LocalizationKey.KEY_WITH_ALT, name);
+            if (_shift) name = LocalizationUtils.Format(LocalizationKey.KEY_WITH_SHIFT, name);
+            return name;
+        }
+
+        // Names of the keys players hear most; everything else falls back to Unity's KeyCode name.
+        private static readonly Dictionary<KeyCode, LocalizationKey> _keyNames = new Dictionary<KeyCode, LocalizationKey>
+        {
+            [KeyCode.Return] = LocalizationKey.KEY_ENTER,
+            [KeyCode.Backspace] = LocalizationKey.KEY_BACKSPACE,
+            [KeyCode.Escape] = LocalizationKey.KEY_ESCAPE,
+            [KeyCode.Space] = LocalizationKey.KEY_SPACE,
+            [KeyCode.UpArrow] = LocalizationKey.KEY_UP,
+            [KeyCode.DownArrow] = LocalizationKey.KEY_DOWN,
+            [KeyCode.LeftArrow] = LocalizationKey.KEY_LEFT,
+            [KeyCode.RightArrow] = LocalizationKey.KEY_RIGHT,
+        };
+
+        private static string KeyName(KeyCode code) =>
+            _keyNames.TryGetValue(code, out var key) ? LocalizationUtils.Get(key) : code.ToString();
+
+        // ---- Input backend (legacy Input Manager). Swap these two for the Input System if needed. ----
+
+        private static bool IsKeyDown(KeyCode code) =>
+            Input.GetKeyDown(code) || (code == KeyCode.Return && Input.GetKeyDown(KeyCode.KeypadEnter));
+
+        private static bool IsKeyHeld(KeyCode code) => Input.GetKey(code);
+    }
+}

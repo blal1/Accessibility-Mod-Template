@@ -1,0 +1,33 @@
+TAG	TEXT	COMMENT
+GLOBAL_MOD_LOADED	{0} geladen	0=Modname, einmal beim Start
+GLOBAL_ACCESSIBILITY_ON	Barrierefreiheit an	F8
+GLOBAL_ACCESSIBILITY_OFF	Barrierefreiheit aus	F8
+GLOBAL_PLEASE_WAIT	Wird geladen, bitte warten.	F1, solange nichts den Fokus hat
+GLOBAL_HELP	F1 Hilfe. F8 Barrierefreiheit an oder aus.	Globale Tasten, an jede F1-Hilfe angehängt
+GLOBAL_COMPAT_PROBLEMS	Achtung: {0} Teile des Mods passen nicht zu dieser Spielversion. Manche Bildschirme bleiben eventuell stumm.	0=Anzahl Probleme; beim Start und in F1
+GLOBAL_CHECKED	aktiviert	Zustand eines Kontrollkästchens
+GLOBAL_UNCHECKED	nicht aktiviert	Zustand eines Kontrollkästchens
+GLOBAL_DISABLED	nicht verfügbar	Ein Knopf, der gerade nicht benutzbar ist
+GLOBAL_NOT_READABLE	Nicht lesbar.	Ein Spieltext, den die Mod nicht lesen konnte (als Warnung geloggt)
+MENU_OPTION_FORMAT	{0}, {1} von {2}	0=Eintrag, 1=Position, 2=Anzahl
+MENU_NO_ITEMS	Keine Einträge.	Leeres Menü oder leere Liste
+MENU_HELP	Pfeiltasten hoch und runter zum Blättern, Pos1 und Ende für erstes und letztes, Zahlen zum Springen, Eingabe zum Auswählen.	F1 in einem Menü
+MENU_HELP_WITH_BACK	Pfeiltasten hoch und runter zum Blättern, Pos1 und Ende für erstes und letztes, Zahlen zum Springen, Eingabe zum Auswählen, Rücktaste für zurück.	F1 in einem Menü mit Zurück
+KEY_ENTER	Eingabe	Tastenname
+KEY_BACKSPACE	Rücktaste	Tastenname
+KEY_ESCAPE	Escape	Tastenname
+KEY_SPACE	Leertaste	Tastenname
+KEY_UP	Pfeil hoch	Tastenname
+KEY_DOWN	Pfeil runter	Tastenname
+KEY_LEFT	Pfeil links	Tastenname
+KEY_RIGHT	Pfeil rechts	Tastenname
+KEY_WITH_SHIFT	Umschalt plus {0}	0=Tastenname
+KEY_WITH_CTRL	Steuerung plus {0}	0=Tastenname
+KEY_WITH_ALT	Alt plus {0}	0=Tastenname
+SETTINGS_TITLE	Mod-Einstellungen	Titel des Strg+F11-Menüs
+SETTINGS_VALUE_FORMAT	{0}: {1}	0=Einstellung, 1=Wert
+SETTINGS_VERBOSITY	Detailstufe	Name der Einstellung
+SETTINGS_VERBOSITY_0	minimal	Wert der Detailstufe
+SETTINGS_VERBOSITY_1	normal	Wert der Detailstufe
+SETTINGS_VERBOSITY_2	ausführlich	Wert der Detailstufe
+SETTINGS_ANNOUNCE_EMPTY	Leere Listen ansagen	Name der Einstellung

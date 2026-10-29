@@ -1,0 +1,102 @@
+using System;
+using System.Collections.Generic;
+
+namespace NAMESPACE
+{
+    /// <summary>
+    /// A horizontal row of readable items (a hand of cards, a party, an inventory row, a reward list),
+    /// as in Hearthstone Access: Left/Right move, Home/End jump, numbers jump to the Nth item,
+    /// and the focused AccessibleItem handles Up/Down line reading itself.
+    ///
+    /// Items are fetched LIVE on every key (getItems), so the list follows the game (cards drawn, items sold).
+    /// Several lists on one screen (your hand, the board, the shop) are separate instances; the component
+    /// switches between them with Tab / Shift+Tab (AccessibleKey.NEXT_SECTION / PREV_SECTION).
+    /// </summary>
+    public sealed class AccessibleListOfItems<T> : AccessibleElement where T : AccessibleItem
+    {
+        private readonly Func<List<T>> _getItems;
+        private readonly Func<string> _emptyText;
+        private List<T> _items = new List<T>();
+        private int _index;
+
+        /// <param name="emptyText">Spoken when the list is empty: never leave the player in silence.</param>
+        public AccessibleListOfItems(AccessibleComponent parent, Func<List<T>> getItems, Func<string> emptyText) : base(parent)
+        {
+            _getItems = getItems;
+            _emptyText = emptyText;
+        }
+
+        public T Current
+        {
+            get
+            {
+                Refresh();
+                return _index < _items.Count ? _items[_index] : null;
+            }
+        }
+
+        public int Index => _index;
+
+        public int Count
+        {
+            get
+            {
+                Refresh();
+                return _items.Count;
+            }
+        }
+
+        public void StartReading(int index = 0)
+        {
+            Refresh();
+            if (_items.Count == 0)
+            {
+                Output(_emptyText());
+                return;
+            }
+            ReadItem(Math.Max(0, Math.Min(index, _items.Count - 1)));
+        }
+
+        /// <summary>Returns true when the key was for this list or its focused item.</summary>
+        public bool HandleInput()
+        {
+            if (AccessibleKey.READ_NEXT_ITEM.IsPressed()) return Move(1);
+            if (AccessibleKey.READ_PREV_ITEM.IsPressed()) return Move(-1);
+            if (AccessibleKey.READ_FIRST_ITEM.IsPressed()) return Jump(0);
+            if (AccessibleKey.READ_LAST_ITEM.IsPressed()) return Jump(int.MaxValue);
+            var n = AccessibleKey.TryGetPressedNumber();
+            if (n.HasValue) return Jump(n.Value - 1);
+            var current = Current;
+            return current != null && current.HandleInput();
+        }
+
+        private bool Move(int delta)
+        {
+            Refresh();
+            var target = _index + delta;
+            if (target >= 0 && target < _items.Count) ReadItem(target);
+            return true;
+        }
+
+        private bool Jump(int index)
+        {
+            Refresh();
+            if (_items.Count > 0) ReadItem(Math.Min(index, _items.Count - 1));
+            return true;
+        }
+
+        private void ReadItem(int index)
+        {
+            _index = index;
+            var item = _items[index];
+            item.Reset();
+            Output(LocalizationUtils.Format(LocalizationKey.MENU_OPTION_FORMAT, item.GetLine(0), index + 1, _items.Count));
+        }
+
+        private void Refresh()
+        {
+            _items = _getItems() ?? new List<T>();
+            if (_index >= _items.Count) _index = Math.Max(0, _items.Count - 1);
+        }
+    }
+}

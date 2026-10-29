@@ -1,0 +1,88 @@
+namespace NAMESPACE
+{
+    /// <summary>
+    /// The mod's own settings menu, as an AccessibleUI over whatever screen is open (Ctrl+F11 by default).
+    /// Values live in ModConfig (MelonPreferences or BepInEx ConfigFile); this class is only the accessible menu.
+    /// Up/Down browse, Enter or Left/Right change the value, Backspace/Escape close and save.
+    ///
+    /// Integration: nothing to wire. AccessibleKey.OPEN_MOD_SETTINGS and the SETTINGS_* localization keys are
+    /// already in the shared templates; the poller below opens it from anywhere (no game method can be hooked for
+    /// a mod-only key, so this is one of the few legitimate pollers). Adding a setting = one property in ModConfig,
+    /// one AddOption here, one SETTINGS_ key + line per language.
+    /// </summary>
+    public sealed class AccessibleModSettings : AccessibleUI
+    {
+        private static readonly AccessibleModSettings _instance = new AccessibleModSettings();
+
+        private readonly AccessibleMenu _menu;
+
+        private AccessibleModSettings()
+        {
+            _menu = new AccessibleMenu(this, null, Close);
+            _menu.AddOption(() => Value(LocalizationKey.SETTINGS_VERBOSITY, VerbosityText()), () => ChangeVerbosity(1));
+            _menu.AddOption(() => Value(LocalizationKey.SETTINGS_ANNOUNCE_EMPTY, OnOff(ModConfig.AnnounceEmptyStates)),
+                () => ToggleAnnounceEmpty());
+        }
+
+        public void HandleInput()
+        {
+            if (AccessibleKey.READ_NEXT_ITEM.IsPressed() || AccessibleKey.READ_PREV_ITEM.IsPressed())
+            {
+                // Left/Right change the current value without leaving the menu.
+                var dir = AccessibleKey.READ_NEXT_ITEM.IsPressed() ? 1 : -1;
+                if (_menu.Index == 0) ChangeVerbosity(dir); else ToggleAnnounceEmpty();
+                return;
+            }
+            _menu.HandleInput();
+        }
+
+        public string GetHelp() => _menu.GetHelp();
+
+        public void OnGainedFocus()
+        {
+            AccessibilityMgr.Output(this, LocalizationUtils.Get(LocalizationKey.SETTINGS_TITLE));
+            _menu.StartReading(readMenuName: false);
+        }
+
+        [AccessibilityPoller]
+        private static void PollOpenKey()
+        {
+            if (!AccessibilityMgr.IsFocused(_instance) && AccessibleKey.OPEN_MOD_SETTINGS.IsPressed())
+                AccessibilityMgr.ShowUI(_instance);
+        }
+
+        private void Close()
+        {
+            ModConfig.Save();
+            AccessibilityMgr.HideUI(this);
+        }
+
+        private void ChangeVerbosity(int dir)
+        {
+            ModConfig.Verbosity = (ModConfig.Verbosity + dir + 3) % 3;
+            AccessibilityMgr.Output(this, VerbosityText());
+        }
+
+        private void ToggleAnnounceEmpty()
+        {
+            ModConfig.AnnounceEmptyStates = !ModConfig.AnnounceEmptyStates;
+            AccessibilityMgr.Output(this, OnOff(ModConfig.AnnounceEmptyStates));
+        }
+
+        private static string VerbosityText()
+        {
+            switch (ModConfig.Verbosity)
+            {
+                case 0: return LocalizationUtils.Get(LocalizationKey.SETTINGS_VERBOSITY_0);
+                case 2: return LocalizationUtils.Get(LocalizationKey.SETTINGS_VERBOSITY_2);
+                default: return LocalizationUtils.Get(LocalizationKey.SETTINGS_VERBOSITY_1);
+            }
+        }
+
+        private static string OnOff(bool value) =>
+            LocalizationUtils.Get(value ? LocalizationKey.GLOBAL_CHECKED : LocalizationKey.GLOBAL_UNCHECKED);
+
+        private static string Value(LocalizationKey name, string value) =>
+            LocalizationUtils.Format(LocalizationKey.SETTINGS_VALUE_FORMAT, LocalizationUtils.Get(name), value);
+    }
+}

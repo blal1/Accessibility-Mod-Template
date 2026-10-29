@@ -1,0 +1,72 @@
+namespace NAMESPACE
+{
+    /// <summary>
+    /// Every string the mod speaks IN ITS OWN WORDS has a key here, and a line with that key in
+    /// Localization/&lt;language&gt;/&lt;Feature&gt;.txt (tab-separated: KEY&lt;TAB&gt;TEXT&lt;TAB&gt;COMMENT, as Hearthstone Access'
+    /// ACCESSIBILITY.txt). Texts the game already has (button labels, item names) are read from the game instead.
+    ///
+    /// One partial file per feature, next to a matching .txt, so translators work feature by feature:
+    ///   LocalizationKey.FEATURENAME.cs:
+    ///     public sealed partial class LocalizationKey
+    ///     {
+    ///         public static readonly LocalizationKey FEATURENAME_TITLE = new LocalizationKey(nameof(FEATURENAME_TITLE));
+    ///     }
+    ///   Localization/en/FEATURENAME.txt:   FEATURENAME_TITLE&lt;TAB&gt;Inventory&lt;TAB&gt;Title spoken when the inventory opens
+    ///
+    /// Key prefix = feature (GLOBAL_, MENU_, KEY_, INVENTORY_ ...). Always new LocalizationKey(nameof(X)):
+    /// the offline test (templates/tests) reads these declarations and fails when a key has no English line,
+    /// a line has no key, or a translation loses a {0} placeholder.
+    /// </summary>
+    public sealed partial class LocalizationKey
+    {
+        public string Key { get; }
+
+        private LocalizationKey(string key) => Key = key;
+
+        public override string ToString() => Key;
+
+        #region Global (Global.txt)
+        public static readonly LocalizationKey GLOBAL_MOD_LOADED = new LocalizationKey(nameof(GLOBAL_MOD_LOADED));
+        public static readonly LocalizationKey GLOBAL_ACCESSIBILITY_ON = new LocalizationKey(nameof(GLOBAL_ACCESSIBILITY_ON));
+        public static readonly LocalizationKey GLOBAL_ACCESSIBILITY_OFF = new LocalizationKey(nameof(GLOBAL_ACCESSIBILITY_OFF));
+        public static readonly LocalizationKey GLOBAL_PLEASE_WAIT = new LocalizationKey(nameof(GLOBAL_PLEASE_WAIT));
+        public static readonly LocalizationKey GLOBAL_HELP = new LocalizationKey(nameof(GLOBAL_HELP));
+        public static readonly LocalizationKey GLOBAL_COMPAT_PROBLEMS = new LocalizationKey(nameof(GLOBAL_COMPAT_PROBLEMS));
+        public static readonly LocalizationKey GLOBAL_CHECKED = new LocalizationKey(nameof(GLOBAL_CHECKED));
+        public static readonly LocalizationKey GLOBAL_UNCHECKED = new LocalizationKey(nameof(GLOBAL_UNCHECKED));
+        public static readonly LocalizationKey GLOBAL_DISABLED = new LocalizationKey(nameof(GLOBAL_DISABLED));
+        public static readonly LocalizationKey GLOBAL_NOT_READABLE = new LocalizationKey(nameof(GLOBAL_NOT_READABLE));
+        #endregion
+
+        #region Menus and lists (Global.txt)
+        public static readonly LocalizationKey MENU_OPTION_FORMAT = new LocalizationKey(nameof(MENU_OPTION_FORMAT));
+        public static readonly LocalizationKey MENU_NO_ITEMS = new LocalizationKey(nameof(MENU_NO_ITEMS));
+        public static readonly LocalizationKey MENU_HELP = new LocalizationKey(nameof(MENU_HELP));
+        public static readonly LocalizationKey MENU_HELP_WITH_BACK = new LocalizationKey(nameof(MENU_HELP_WITH_BACK));
+        #endregion
+
+        #region Mod settings menu (Global.txt)
+        public static readonly LocalizationKey SETTINGS_TITLE = new LocalizationKey(nameof(SETTINGS_TITLE));
+        public static readonly LocalizationKey SETTINGS_VALUE_FORMAT = new LocalizationKey(nameof(SETTINGS_VALUE_FORMAT));
+        public static readonly LocalizationKey SETTINGS_VERBOSITY = new LocalizationKey(nameof(SETTINGS_VERBOSITY));
+        public static readonly LocalizationKey SETTINGS_VERBOSITY_0 = new LocalizationKey(nameof(SETTINGS_VERBOSITY_0));
+        public static readonly LocalizationKey SETTINGS_VERBOSITY_1 = new LocalizationKey(nameof(SETTINGS_VERBOSITY_1));
+        public static readonly LocalizationKey SETTINGS_VERBOSITY_2 = new LocalizationKey(nameof(SETTINGS_VERBOSITY_2));
+        public static readonly LocalizationKey SETTINGS_ANNOUNCE_EMPTY = new LocalizationKey(nameof(SETTINGS_ANNOUNCE_EMPTY));
+        #endregion
+
+        #region Key names, for "Press {0}" help texts (Global.txt)
+        public static readonly LocalizationKey KEY_ENTER = new LocalizationKey(nameof(KEY_ENTER));
+        public static readonly LocalizationKey KEY_BACKSPACE = new LocalizationKey(nameof(KEY_BACKSPACE));
+        public static readonly LocalizationKey KEY_ESCAPE = new LocalizationKey(nameof(KEY_ESCAPE));
+        public static readonly LocalizationKey KEY_SPACE = new LocalizationKey(nameof(KEY_SPACE));
+        public static readonly LocalizationKey KEY_UP = new LocalizationKey(nameof(KEY_UP));
+        public static readonly LocalizationKey KEY_DOWN = new LocalizationKey(nameof(KEY_DOWN));
+        public static readonly LocalizationKey KEY_LEFT = new LocalizationKey(nameof(KEY_LEFT));
+        public static readonly LocalizationKey KEY_RIGHT = new LocalizationKey(nameof(KEY_RIGHT));
+        public static readonly LocalizationKey KEY_WITH_SHIFT = new LocalizationKey(nameof(KEY_WITH_SHIFT));
+        public static readonly LocalizationKey KEY_WITH_CTRL = new LocalizationKey(nameof(KEY_WITH_CTRL));
+        public static readonly LocalizationKey KEY_WITH_ALT = new LocalizationKey(nameof(KEY_WITH_ALT));
+        #endregion
+    }
+}

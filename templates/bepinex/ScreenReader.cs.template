@@ -6,6 +6,8 @@ namespace NAMESPACE
     /// <summary>
     /// Wrapper for Tolk screenreader library.
     /// Provides simple methods to announce text via NVDA, JAWS, or other screenreaders.
+    /// ONLY AccessibilityMgr calls Say/Stop, so the focus rules (only the focused component speaks) always apply.
+    /// Features never call ScreenReader directly: they use AccessibilityMgr.Output(this, text).
     ///
     /// REQUIREMENTS:
     /// - Tolk.dll must be in the game folder (where the .exe is)

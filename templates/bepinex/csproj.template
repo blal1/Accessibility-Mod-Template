@@ -18,6 +18,14 @@
   <ItemGroup>
     <Compile Remove="decompiled\**" />
     <Compile Remove="templates\**" />
+    <Compile Remove="Tests\**" />
+    <Compile Remove="recon\**" />
+  </ItemGroup>
+
+  <!-- Lokalisierung: Localization/<sprache>/<Feature>.txt (KEY<TAB>TEXT<TAB>KOMMENTAR) werden in die DLL eingebettet.
+       LocalizationUtils liest sie als Ressourcen "Localization/<sprache>/<Datei>". Siehe docs/03-architecture.md -->
+  <ItemGroup>
+    <EmbeddedResource Include="Localization\**\*.txt" LogicalName="Localization/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!-- BepInEx Referenzen -->
@@ -48,6 +56,11 @@
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- TextMeshPro: most Unity games show text with it (ReflectionHelper and AccessibleFEATURENAME use TMPro.TMP_Text). Remove if the game has no Unity.TextMeshPro.dll. -->
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>SPIELORDNER\SPIELNAME_Data\Managed\Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">

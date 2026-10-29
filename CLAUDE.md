@@ -7,7 +7,7 @@ User:
 
 # Project Start
 
-**New project / greeting / "hallo"** → read `docs/setup-guide.md`, run setup interview. Use `winget` and CLI tools for installations where possible.
+**New project / greeting / "hallo"** → read `docs/01-setup-and-tooling.md`, run setup interview. Use `winget` and CLI tools for installations where possible.
 
 **Continuing / "weiter"** → read `project_status.md`:
 1. Any pending tests or notes? If so, ask user for results before continuing
@@ -30,12 +30,18 @@ When setting up Tolk for a mod project, ALWAYS copy BOTH DLLs to the game direct
 
 # Coding Rules, after setup delete what doesn't apply to current project:
 
-- Handler classes: `[Feature]Handler`
+- Architecture (Hearthstone Access): `docs/03-architecture.md`. One class per game surface: `Accessible<Name>` (AccessibleScreen or AccessibleUI) in `Accessibility/Screens/<Area>/`, opened and closed ONLY by hooks on the game's own methods via `AccessibilityMgr.SetScreen/ClearScreen/ShowUI/HideUI`. Only the focused component gets keys and may speak. No handler classes, no state managers, no bool flags for "who is active".
+- Speech: only `AccessibilityMgr.Output(this, ...)` from the focused component, `OutputNotification(...)` from hooks. Never call ScreenReader directly.
+- Keys: declared once in `AccessibleKey` (feature keys in `AccessibleKey.<Feature>.cs`) with exact modifiers; only keys from game-api.md "Safe Mod Keys". Never `Input.GetKeyDown` in features.
+- Hooks: nested `[HarmonyPatch]` classes inside their component, body always inside `AccessibilityMgr.Guard("Where", () => ...)`. Patches applied by `Compat.PatchAll`, never `harmony.PatchAll()`.
+- Localization from day one: every spoken text is a `LocalizationKey` with English text in `Localization/en/<Feature>.txt` (KEY<TAB>TEXT<TAB>COMMENT), translations in `Localization/<lang>/`; the game's own strings first (`LocalizationUtils.GetGame`). Whole sentences with `{0}` placeholders, never glued fragments, never cached in statics. Even for single-language mods.
+- Reflection: `ReflectionHelper` with literal member names from `decompiled/` (checked by Compat and the offline test). One verified name, no guessing chains.
+- Tests: `dotnet test Tests` after every change and first after every game update.
 - Private fields: `_camelCase`
 - Logs/comments: English
 - Build & Deploy: use `scripts/Build-Mod.ps1` and `scripts/Deploy-Mod.ps1` (created during setup). Always use scripts, never raw `dotnet build` in CLAUDE.md.
 - XML docs: `<summary>` on all public classes/methods. Private only if non-obvious. Critical for dev integration.
-- Localization from day one: ALL ScreenReader strings through `Loc.Get()`. No exceptions. `Loc.cs` = Phase 2 framework, not later addition. Even for single-language mods.
+- Never push, publish or share `decompiled/` or `recon-records/` (proprietary game code and details).
 
 # Coding Principles
 
@@ -47,21 +53,23 @@ When setting up Tolk for a mod project, ALWAYS copy BOTH DLLs to the game direct
 - **Respect game controls** — never override game keys, handle rapid presses
 - **Submission-quality** — clean enough for dev integration, consistent formatting, meaningful names, no undocumented hacks
 
-Patterns: `docs/ACCESSIBILITY_MODDING_GUIDE.md`
+Principles and speech patterns: `docs/00-overview-and-principles.md`
 
 # Error Handling
 
-- Null-safety with logging: never silent. Log via DebugLogger AND announce via ScreenReader.
+- Never break the game: everything the game calls into (hooks, events, coroutines) runs inside `AccessibilityMgr.Guard`.
+- Null-safety with logging: never silent. Log via DebugLogger AND tell the player via `AccessibilityMgr.Output`.
 - Try-catch ONLY for Reflection + external calls (Tolk, changing game APIs). Normal code: null-checks.
-- DebugLogger: always available, active only in debug mode (F12). Zero overhead otherwise.
+- DebugLogger: `Log(category, ...)` only in debug mode (F12), zero overhead otherwise; `Info/Warn/Error` always.
 
 # Before Implementation
 
-1. **GATE CHECK:** Tier 1 analysis must be complete (see project_status.md checkboxes). If game key bindings are not documented in game-api.md, STOP and do that first!
-2. Search `decompiled/` for real class/method names — NEVER guess
-3. Check `docs/game-api.md` for keys, methods, patterns
-4. Only use safe mod keys (game-api.md → "Safe Mod Keys")
-5. Files >500 lines: targeted search first, don't auto-read fully
+1. **GATE CHECK:** Tier 1 analysis must be complete (see project_status.md checkboxes, `docs/02-reconnaissance.md` "Tier 1 completion gate"). If game key bindings are not documented in game-api.md, STOP and do that first!
+2. Every feature is a slice: run the reconnaissance workflow (`docs/02-reconnaissance.md`, G0-G7) and reach `READY FOR SLICE IMPLEMENTATION` before writing the component. Report claims with their real grade; `uar` validation is consistency-only, never "works".
+3. Search `decompiled/` for real class/method names — NEVER guess
+4. Check `docs/game-api.md` for keys, methods, patterns
+5. Only use safe mod keys (game-api.md → "Safe Mod Keys")
+6. Files >500 lines: targeted search first, don't auto-read fully
 
 # Session & Context Management
 
@@ -75,20 +83,23 @@ Patterns: `docs/ACCESSIBILITY_MODDING_GUIDE.md`
 # References, after setup delete what doesn't apply to current project:
 
 - `project_status.md` — central tracking (read first!)
-- `docs/setup-guide.md` — setup interview
-- `docs/ACCESSIBILITY_MODDING_GUIDE.md` — code patterns
-- `docs/technical-reference.md` — MelonLoader, BepInEx, Harmony, Tolk
-- `docs/unity-reflection-guide.md` — Reflection (Unity)
-- `docs/state-management-guide.md` — multiple handlers
-- `docs/localization-guide.md` — localization
-- `docs/menu-accessibility-checklist.md` — menu checklist
-- `docs/menu-accessibility-patterns.md` — menu patterns
-- `docs/known-issues.md` — compatibility warnings (checked during setup)
-- `docs/legacy-unity-modding.md` — Unity 5.x and older
-- `docs/game-api.md` — keys, methods, patterns
-- `docs/distribution-guide.md` — packaging, publishing
-- `docs/git-github-guide.md` — Git/GitHub intro
+- `docs/game-api.md` — keys, methods, hook targets, patterns of THIS game
+- `docs/00-overview-and-principles.md` — goals, speech principles, architecture in one page, dos and don'ts
+- `docs/01-setup-and-tooling.md` — setup interview, tools, decompile per version, build workflow
+- `docs/02-reconnaissance.md` — Tier 1 baseline, slice workflow G0-G7, grep catalogs, feature plan
+- `docs/03-architecture.md` — focus model, components, hooks, keys, speech, localization, compat; creating the core
+- `docs/04-building-screens.md` — one surface = one Accessible class; menus, lists, popups, boards; per-screen checklist
+- `docs/05-quality-and-updates.md` — error handling, performance, offline tests, game update workflow, acceptance
+- `docs/06-distribution.md` — packaging, publishing
+- `docs/appendix-a-unity-loaders-harmony.md` — MelonLoader, BepInEx, Harmony, Tolk, Input System
+- `docs/appendix-b-unity-reflection.md` — Reflection (Unity)
+- `docs/appendix-c-legacy-unity.md` — Unity 5.x and older
+- `docs/appendix-d-other-engines.md` — Godot, Unreal, native, other .NET
+- `docs/appendix-e-known-issues.md` — compatibility warnings (checked during setup)
+- `docs/appendix-f-git-github.md` — Git/GitHub intro
 - `templates/melonloader/` — MelonLoader-specific templates
 - `templates/bepinex/` — BepInEx-specific templates
-- `templates/shared/` — mod-loader-independent templates
-- `scripts/` — PowerShell helpers
+- `templates/shared/` — the core (AccessibilityMgr, components, keys, menus, localization, Compat) and the screen template
+- `templates/tests/` — offline tests (`dotnet test Tests`)
+- `recon/` — reconnaissance workflow and `uar` validator (records go to `recon-records/`, private)
+- `scripts/` — PowerShell helpers (build, deploy, Decompile-Game.ps1, setup checks)

@@ -1,0 +1,33 @@
+TAG	TEXT	COMMENT
+GLOBAL_MOD_LOADED	{0} loaded	0=mod name, spoken once at startup
+GLOBAL_ACCESSIBILITY_ON	Accessibility on	F8
+GLOBAL_ACCESSIBILITY_OFF	Accessibility off	F8
+GLOBAL_PLEASE_WAIT	Loading, please wait.	F1 when nothing has focus yet
+GLOBAL_HELP	F1 help. F8 accessibility on or off.	Global keys, appended to every F1 help
+GLOBAL_COMPAT_PROBLEMS	Warning: {0} parts of the mod do not match this game version. Some screens may be silent.	0=number of problems; spoken at startup and appended to F1
+GLOBAL_CHECKED	checked	Toggle state
+GLOBAL_UNCHECKED	not checked	Toggle state
+GLOBAL_DISABLED	unavailable	A button the player cannot use right now
+GLOBAL_NOT_READABLE	Not readable.	A game text the mod could not read (logged as a warning)
+MENU_OPTION_FORMAT	{0}, {1} of {2}	0=option text, 1=position, 2=count
+MENU_NO_ITEMS	No items.	Empty menu or list
+MENU_HELP	Up and down arrows to browse, Home and End for first and last, numbers to jump, Enter to select.	F1 in a menu
+MENU_HELP_WITH_BACK	Up and down arrows to browse, Home and End for first and last, numbers to jump, Enter to select, Backspace to go back.	F1 in a menu that can go back
+KEY_ENTER	Enter	Key name
+KEY_BACKSPACE	Backspace	Key name
+KEY_ESCAPE	Escape	Key name
+KEY_SPACE	Space	Key name
+KEY_UP	Up arrow	Key name
+KEY_DOWN	Down arrow	Key name
+KEY_LEFT	Left arrow	Key name
+KEY_RIGHT	Right arrow	Key name
+KEY_WITH_SHIFT	Shift plus {0}	0=key name
+KEY_WITH_CTRL	Control plus {0}	0=key name
+KEY_WITH_ALT	Alt plus {0}	0=key name
+SETTINGS_TITLE	Mod settings	Ctrl+F11 menu title
+SETTINGS_VALUE_FORMAT	{0}: {1}	0=setting name, 1=value
+SETTINGS_VERBOSITY	Detail level	Setting name
+SETTINGS_VERBOSITY_0	minimal	Detail level value
+SETTINGS_VERBOSITY_1	normal	Detail level value
+SETTINGS_VERBOSITY_2	verbose	Detail level value
+SETTINGS_ANNOUNCE_EMPTY	Announce empty lists	Setting name

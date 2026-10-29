@@ -1,0 +1,244 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+
+namespace NAMESPACE
+{
+    /// <summary>
+    /// The hub of the mod, as in Hearthstone Access: ONE current screen, a STACK of UIs over it,
+    /// and the rule that only the focused component (top UI, else the screen) receives keys and may speak.
+    /// See docs/03-architecture.md.
+    ///
+    /// Who calls what:
+    /// - Game hooks (Harmony patches, events) are the ONLY callers of SetScreen / ClearScreen / ShowUI / HideUI
+    ///   and OutputNotification. They never speak through ScreenReader directly.
+    /// - Main calls Initialize() once and Update() once per frame. Nothing else goes into Main.
+    /// - Components speak with AccessibilityMgr.Output(this, text); elements speak through their parent.
+    ///
+    /// Why every call into a component is guarded (Safe):
+    /// hooks run INSIDE the game's own call stack. An exception escaping from mod code into the game can kill
+    /// the coroutine or method that called it. In a real mod, an exception thrown from a modal's Open hook
+    /// killed the coroutine driving an online match and hard-froze the game. A broken component is logged
+    /// (once per distinct error) and skipped; the game always keeps running.
+    /// </summary>
+    public static class AccessibilityMgr
+    {
+        private static readonly List<AccessibleUI> _uis = new List<AccessibleUI>();
+        private static AccessibleScreen _screen;
+
+        private static bool _enabled = true;
+        private static bool _textInputAllowed;
+
+        // Speech asked for while the game window was in the background is dropped (the player is in another
+        // window); if anything was dropped, the focused component re-announces itself when the window comes back.
+        private static bool _wasFocused = true;
+        private static bool _missedSpeech;
+
+        // Static methods marked [AccessibilityPoller], discovered once so no feature ever edits Main.
+        private static readonly List<Action> _pollers = new List<Action>();
+
+        // HandleInput runs every frame: a component stuck throwing is logged once per distinct error, not 60 times a second.
+        private static readonly HashSet<string> _loggedErrors = new HashSet<string>();
+
+        /// <summary>The component that owns keyboard and voice right now (top UI, else the screen), or null.</summary>
+        public static AccessibleComponent Focused => _uis.Count > 0 ? _uis[_uis.Count - 1] : _screen;
+
+        /// <summary>The current base screen, even while UIs cover it.</summary>
+        public static AccessibleScreen CurrentScreen => _screen;
+
+        /// <summary>True when the mod's speech and keys are on (toggled by AccessibleKey.TOGGLE_ACCESSIBILITY).</summary>
+        public static bool IsEnabled => _enabled;
+
+        /// <summary>Call once at startup (Main), after ScreenReader.Initialize().</summary>
+        public static void Initialize(Assembly modAssembly)
+        {
+            foreach (var type in SafeTypes(modAssembly))
+            {
+                foreach (var m in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                {
+                    if (m.IsDefined(typeof(AccessibilityPollerAttribute), false) && m.GetParameters().Length == 0)
+                        _pollers.Add((Action)Delegate.CreateDelegate(typeof(Action), m));
+                }
+            }
+            OutputNotification(LocalizationUtils.Format(LocalizationKey.GLOBAL_MOD_LOADED, "MODNAME"), interrupt: true);
+        }
+
+        #region Screens and UIs
+
+        /// <summary>
+        /// The game moved to another base screen. If a UI is showing, the screen waits SILENTLY underneath
+        /// and announces itself when the last UI closes.
+        /// </summary>
+        public static void SetScreen(AccessibleScreen screen)
+        {
+            if (screen == null || _screen == screen) return;
+            DebugLogger.Info($"Screen -> {screen.GetType().Name}");
+            _screen = screen;
+            if (_uis.Count == 0) Safe(screen, "OnGainedFocus", screen.OnGainedFocus);
+        }
+
+        /// <summary>The game tore this screen down. Ignored if another screen already replaced it.</summary>
+        public static void ClearScreen(AccessibleScreen screen)
+        {
+            if (_screen != screen) return;
+            DebugLogger.Info($"Screen <- {screen.GetType().Name}");
+            _screen = null;
+        }
+
+        /// <summary>A popup/overlay opened: it gets focus and announces itself.</summary>
+        public static void ShowUI(AccessibleUI ui)
+        {
+            if (ui == null || Focused == ui) return;
+            // Re-shown while buried under another UI: move it to the top instead of stacking a duplicate.
+            _uis.Remove(ui);
+            _uis.Add(ui);
+            DebugLogger.Info($"UI -> {ui.GetType().Name}");
+            Safe(ui, "OnGainedFocus", ui.OnGainedFocus);
+        }
+
+        /// <summary>
+        /// Works from ANYWHERE in the stack: the game closes things when it pleases, including under another UI.
+        /// A dead UI left buried would later surface owning the keyboard with nothing to drive.
+        /// Only when the focused UI closes does the next one (or the screen) re-announce itself.
+        /// </summary>
+        public static void HideUI(AccessibleUI ui)
+        {
+            if (ui == null) return;
+            var wasFocused = Focused == ui;
+            if (!_uis.Remove(ui)) return;
+            DebugLogger.Info($"UI <- {ui.GetType().Name}");
+            if (wasFocused && Focused is AccessibleComponent next) Safe(next, "OnGainedFocus", next.OnGainedFocus);
+        }
+
+        /// <summary>True when this component currently owns keyboard and voice.</summary>
+        public static bool IsFocused(AccessibleComponent component) => component != null && Focused == component;
+
+        #endregion
+
+        #region Speech
+
+        /// <summary>
+        /// Speech from a component is only heard while it has focus: a covered screen or a buried UI stays quiet.
+        /// interrupt: true for the answer to a key press; false for queued follow-ups (hints, details).
+        /// </summary>
+        public static void Output(AccessibleComponent speaker, string text, bool interrupt = true)
+        {
+            if (speaker != null && speaker == Focused) Say(text, interrupt);
+        }
+
+        /// <summary>
+        /// Game events that matter wherever the player is (opponent's move, match found, error popup text).
+        /// Queued by default so it does not cut off what the player is reading.
+        /// </summary>
+        public static void OutputNotification(string text, bool interrupt = false) => Say(text, interrupt);
+
+        private static void Say(string text, bool interrupt)
+        {
+            if (!_enabled || string.IsNullOrEmpty(text)) return;
+            if (!Application.isFocused)
+            {
+                _missedSpeech = true;
+                return;
+            }
+            ScreenReader.Say(text, interrupt);
+        }
+
+        #endregion
+
+        #region Input
+
+        /// <summary>Text fields need every key: the component owning the field turns this on while the player types.</summary>
+        public static void AllowTextInput() => _textInputAllowed = true;
+
+        /// <summary>Turn mod keys back on when the text field loses focus or is submitted.</summary>
+        public static void DisallowTextInput() => _textInputAllowed = false;
+
+        /// <summary>Call once per frame from Main.</summary>
+        public static void Update()
+        {
+            LocalizationUtils.Update();
+            HandleWindowFocus();
+            foreach (var poll in _pollers)
+            {
+                try { poll(); }
+                catch (Exception e) { LogOnce($"{poll.Method.DeclaringType?.Name}.{poll.Method.Name}", e); }
+            }
+            if (!Application.isFocused) return;
+
+            if (AccessibleKey.TOGGLE_ACCESSIBILITY.IsPressed())
+            {
+                _enabled = !_enabled;
+                // Spoken directly: when turning off, Say() would already drop it.
+                ScreenReader.Say(LocalizationUtils.Get(_enabled ? LocalizationKey.GLOBAL_ACCESSIBILITY_ON : LocalizationKey.GLOBAL_ACCESSIBILITY_OFF), true);
+                return;
+            }
+            if (!_enabled) return;
+
+            if (AccessibleKey.HELP.IsPressed())
+            {
+                Say(GetHelp(), interrupt: true);
+                return;
+            }
+            if (_textInputAllowed) return;
+
+            if (Focused is AccessibleComponent focused) Safe(focused, "HandleInput", focused.HandleInput);
+        }
+
+        // F1: the focused component's help, then the global keys, then the compat warning if any.
+        private static string GetHelp()
+        {
+            string help = LocalizationUtils.Get(LocalizationKey.GLOBAL_PLEASE_WAIT);
+            if (Focused is AccessibleComponent focused) Safe(focused, "GetHelp", () => help = focused.GetHelp());
+            var text = $"{help} {LocalizationUtils.Get(LocalizationKey.GLOBAL_HELP)}";
+            return Compat.Summary() is string compat ? $"{text} {compat}" : text;
+        }
+
+        private static void HandleWindowFocus()
+        {
+            var focused = Application.isFocused;
+            if (focused == _wasFocused) return;
+            _wasFocused = focused;
+            if (!focused)
+            {
+                ScreenReader.Stop();
+                return;
+            }
+            if (_missedSpeech && Focused is AccessibleComponent component)
+            {
+                _missedSpeech = false;
+                Safe(component, "OnGainedFocus", component.OnGainedFocus);
+            }
+        }
+
+        #endregion
+
+        #region Exception guard
+
+        /// <summary>
+        /// Run a call into mod code from a place the game controls (hook, event, coroutine) without ever letting
+        /// an exception escape into the game. Hooks use this too: AccessibilityMgr.Guard("MyHook", () => ...).
+        /// </summary>
+        public static void Guard(string where, Action call)
+        {
+            try { call(); }
+            catch (Exception e) { LogOnce(where, e); }
+        }
+
+        private static void Safe(AccessibleComponent component, string what, Action call) =>
+            Guard($"{component.GetType().Name}.{what}", call);
+
+        private static void LogOnce(string where, Exception e)
+        {
+            if (_loggedErrors.Add($"{where}|{e.GetType().Name}|{e.Message}")) DebugLogger.Error($"{where} threw: {e}");
+        }
+
+        private static IEnumerable<Type> SafeTypes(Assembly asm)
+        {
+            try { return asm.GetTypes(); }
+            catch (ReflectionTypeLoadException e) { return Array.FindAll(e.Types, t => t != null); }
+        }
+
+        #endregion
+    }
+}

@@ -7,13 +7,13 @@ namespace NAMESPACE
     /// Usage:
     ///   DebugLogger.Log(LogCategory.Input, "Tab pressed");
     ///   DebugLogger.Log(LogCategory.State, "Inventory opened");
-    ///   DebugLogger.Log(LogCategory.Handler, "InventoryHandler", "Navigated to item 3");
+    ///   DebugLogger.Log(LogCategory.Component, "AccessibleInventory", "Read item 3");
     ///
     /// Categories help when reading logs:
     ///   [SR] Screenreader output - what the user hears
     ///   [INPUT] Key presses and input events
     ///   [STATE] Screen/menu state changes
-    ///   [HANDLER] Handler decisions and actions
+    ///   [COMPONENT] Component decisions and actions
     ///   [GAME] Values read from game (positions, stats, etc.)
     /// </summary>
     public static class DebugLogger
@@ -34,10 +34,10 @@ namespace NAMESPACE
 
         /// <summary>
         /// Log a debug message with category and source.
-        /// Useful for handler logs to identify which handler logged.
+        /// Useful to identify which component logged.
         /// </summary>
         /// <param name="category">The log category</param>
-        /// <param name="source">Source identifier (e.g. handler name)</param>
+        /// <param name="source">Source identifier (e.g. component name)</param>
         /// <param name="message">The message to log</param>
         public static void Log(LogCategory category, string source, string message)
         {
@@ -48,7 +48,7 @@ namespace NAMESPACE
         }
 
         /// <summary>
-        /// Log screenreader output. Called automatically by ScreenReader.Say().
+        /// Log screenreader output. Called automatically by ScreenReader.Say() (only AccessibilityMgr calls it).
         /// </summary>
         public static void LogScreenReader(string text)
         {
@@ -90,6 +90,17 @@ namespace NAMESPACE
             Main.Log.LogInfo($"[GAME] {name} = {value}");
         }
 
+        // ---- Always on (not only in debug mode): problems must reach the log even for players ----
+
+        /// <summary>Always logged. Lifecycle facts: screen/UI changes, compat report, language changes.</summary>
+        public static void Info(string message) => Main.Log.LogInfo(message);
+
+        /// <summary>Always logged. Something is off but the mod keeps working (missing game member, missing translation).</summary>
+        public static void Warn(string message) => Main.Log.LogWarning(message);
+
+        /// <summary>Always logged. An exception caught by a guard. Callers log each distinct error once.</summary>
+        public static void Error(string message) => Main.Log.LogError(message);
+
         private static string GetPrefix(LogCategory category)
         {
             return category switch
@@ -97,7 +108,7 @@ namespace NAMESPACE
                 LogCategory.ScreenReader => "[SR]",
                 LogCategory.Input => "[INPUT]",
                 LogCategory.State => "[STATE]",
-                LogCategory.Handler => "[HANDLER]",
+                LogCategory.Component => "[COMPONENT]",
                 LogCategory.Game => "[GAME]",
                 _ => "[DEBUG]"
             };
@@ -118,8 +129,8 @@ namespace NAMESPACE
         /// <summary>Screen/menu state changes</summary>
         State,
 
-        /// <summary>Handler decisions and processing</summary>
-        Handler,
+        /// <summary>Component decisions and processing</summary>
+        Component,
 
         /// <summary>Values read from the game</summary>
         Game

@@ -27,6 +27,8 @@
 - [ ] Project directory set up (csproj, Main.cs, etc.)
 - [ ] CLAUDE.md updated with project-specific values
 - [ ] First build successful
+- [ ] Offline tests pass (`dotnet test Tests`)
+- [ ] Recon tools installed (`cd recon; uv sync --dev`)
 - [ ] "Mod loaded" announcement working in game
 
 ## Current Phase
@@ -43,14 +45,15 @@
 - [ ] 1.2 Input system — ALL game key bindings documented in game-api.md "Game Key Bindings"
 - [ ] 1.2 Input system — Safe mod keys identified and listed in game-api.md "Safe Mod Keys"
 - [ ] 1.3 UI system (base classes, text access patterns, Reflection needed?)
-- [ ] 1.4 State management decision → documented in "Architecture Decisions" below
-- [ ] 1.5 Localization: game's language system analyzed (only if multilingual)
+- [ ] 1.4 Focus model mapping: expected screens and UIs with their open/close methods → "Architecture Decisions" below
+- [ ] 1.5 Localization: game's language detection and string lookup documented in game-api.md "Localization"
+- [ ] Build fingerprint created (recon-records/build-fingerprint.json, matches the decompiled/ branch)
 
 ### GATE: Relevant Tier 2 items MUST be done before implementing each feature!
 
 - [ ] 1.6 Game mechanics (analyzed as needed per feature)
 - [ ] 1.7 Status/feedback systems
-- [ ] 1.8 Event system / Harmony patch points
+- [ ] 1.8 Event system / hook targets (verified per slice by a runtime probe)
 - [ ] 1.9 Results documented in `docs/game-api.md`
 - [ ] 1.10 Tutorial analysis (when relevant)
 
@@ -113,13 +116,15 @@ Document important decisions so future sessions understand the reasoning:
 
 <!-- Example:
 - Using ReflectionHelper for all UI text access (most fields are private)
-- State management via AccessStateManager (3+ handlers share arrow keys)
-- Manual Harmony patching in OnSceneWasLoaded (typeof() crashes at assembly load)
+- Screens: AccessibleTitle (TitleScreen.Show/Hide), AccessibleHub (HubScene.OnEnable/OnDisable); UIs: AccessibleConfirmPopup (ConfirmPopup.Open/Close)
+- Compat.PatchAll moved to first OnSceneWasLoaded (this game crashes when its types are touched earlier)
 -->
 
 ## Key Bindings (Mod)
 
-- F1: Help
+- F1: Help (context-sensitive)
+- F8: Mod on/off
+- Ctrl+F11: Mod settings
 - F12: Toggle debug mode
 <!-- Add more as features are implemented -->
 

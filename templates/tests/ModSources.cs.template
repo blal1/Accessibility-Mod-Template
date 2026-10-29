@@ -1,0 +1,64 @@
+using System.Reflection;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+
+namespace Tests;
+
+// The mod's sources, parsed once, and for GameCompatTests a semantic model compiled against the INSTALLED game's
+// assemblies (metadata only: nothing from the game runs). Adapted from PTCGL Access (MIT).
+internal static class ModSources
+{
+    // Folders under the project root that are not mod code.
+    private static readonly string[] s_skipped = { "obj", "bin", "decompiled", "templates", "Tests", "recon", "game" };
+
+    public static readonly string ModDir = FindModDir();
+
+    public static readonly IReadOnlyList<SyntaxTree> Trees = Directory
+        .EnumerateFiles(ModDir, "*.cs", SearchOption.AllDirectories)
+        .Where(p => !Path.GetRelativePath(ModDir, p).Split(Path.DirectorySeparatorChar).Any(part => s_skipped.Contains(part)))
+        .Select(p => CSharpSyntaxTree.ParseText(File.ReadAllText(p), new CSharpParseOptions(LanguageVersion.Latest), path: Path.GetRelativePath(ModDir, p)))
+        .ToList();
+
+    public static string? GameDir()
+    {
+        var env = Environment.GetEnvironmentVariable("GAME_DIR");
+        if (!string.IsNullOrEmpty(env)) return env;
+        return Metadata("GameDir");
+    }
+
+    private static CSharpCompilation? s_compilation;
+
+    // Null when the game isn't installed where Tests.csproj says.
+    public static CSharpCompilation? Compilation()
+    {
+        if (s_compilation != null) return s_compilation;
+        var game = GameDir();
+        var managed = game == null ? null : Path.Combine(game, Metadata("GameDataDir") ?? "", "Managed");
+        if (managed == null || !Directory.Exists(managed)) return null;
+
+        // Game + Unity assemblies, plus the mod loader's (MelonLoader net35/net6, BepInEx core) for Harmony etc.
+        var dirs = new[] { managed, Path.Combine(game!, "MelonLoader", "net35"), Path.Combine(game!, "MelonLoader", "net6"), Path.Combine(game!, "BepInEx", "core") };
+        var refs = dirs.Where(Directory.Exists)
+            .SelectMany(d => Directory.EnumerateFiles(d, "*.dll"))
+            .GroupBy(Path.GetFileName).Select(g => g.First())
+            .Select(p => (MetadataReference)MetadataReference.CreateFromFile(p))
+            .ToList();
+        s_compilation = CSharpCompilation.Create("ModUnderTest", Trees, refs,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
+                // Private members are what the mod reaches for; Roslyn skips them by default.
+                .WithMetadataImportOptions(MetadataImportOptions.All));
+        return s_compilation;
+    }
+
+    private static string? Metadata(string key) =>
+        typeof(ModSources).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == key)?.Value;
+
+    private static string FindModDir()
+    {
+        for (var d = new DirectoryInfo(AppContext.BaseDirectory); d != null; d = d.Parent)
+        {
+            if (File.Exists(Path.Combine(d.FullName, "MODNAME.csproj"))) return d.FullName;
+        }
+        throw new InvalidOperationException("MODNAME.csproj not found above the test binaries");
+    }
+}

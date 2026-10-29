@@ -5,8 +5,19 @@
 bin/
 obj/
 
-# Decompiled game code (large, user-specific)
+# Decompiled game code: PROPRIETARY, own private git repo (scripts/Decompile-Game.ps1). Never publish.
 decompiled/
+
+# Junction to the game installation
+game/
+
+# Reconnaissance records of a project (may contain proprietary names, paths, hashes)
+recon-records/
+
+# Python environment and caches of recon/
+recon/.venv/
+.pytest_cache/
+__pycache__/
 
 # OS files
 Thumbs.db

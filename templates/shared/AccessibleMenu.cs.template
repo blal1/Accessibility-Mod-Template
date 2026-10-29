@@ -1,0 +1,121 @@
+using System;
+using System.Collections.Generic;
+
+namespace NAMESPACE
+{
+    /// <summary>
+    /// A vertical list of options, as in Hearthstone Access:
+    /// Up/Down read, Home/End jump, numbers jump to the Nth option, Enter (or Space) selects,
+    /// Backspace/Escape go back. The list stops at its edges (no wraparound): the player learns its size,
+    /// and Home/End/numbers make wrapping unnecessary.
+    ///
+    /// Options are text (or live text read at the moment it is spoken) plus an action. The action calls the
+    /// GAME's own path (button.onClick.Invoke(), the game's Select/Confirm method), never a mirrored state.
+    ///
+    /// Usage inside a component:
+    ///   _menu = new AccessibleMenu(this, LocalizationUtils.Get(LocalizationKey.FEATURENAME_TITLE), GoBack);
+    ///   _menu.AddOption(() => LocalizationUtils.Get(LocalizationKey.FEATURENAME_PLAY), () => _playButton.onClick.Invoke());
+    ///   OnGainedFocus: _menu.StartReading();   HandleInput: _menu.HandleInput();   GetHelp: _menu.GetHelp();
+    /// </summary>
+    public sealed class AccessibleMenu : AccessibleElement
+    {
+        private sealed class MenuOption
+        {
+            internal readonly Func<string> GetText;
+            internal readonly Action OnSelect;
+
+            internal MenuOption(Func<string> getText, Action onSelect)
+            {
+                GetText = getText;
+                OnSelect = onSelect;
+            }
+        }
+
+        private readonly string _menuName;
+        private readonly Action _goBackAction;
+        private readonly List<MenuOption> _options = new List<MenuOption>();
+        private int _index;
+
+        /// <param name="parent">The component that owns this menu (it speaks through it).</param>
+        /// <param name="menuName">Spoken before the first option on focus; null for none.</param>
+        /// <param name="goBackAction">What Backspace/Escape do (usually the game's own close/back); null if nothing.</param>
+        public AccessibleMenu(AccessibleComponent parent, string menuName, Action goBackAction) : base(parent)
+        {
+            _menuName = menuName;
+            _goBackAction = goBackAction;
+        }
+
+        public int Count => _options.Count;
+
+        public int Index => _index;
+
+        public void AddOption(string text, Action onSelect) => _options.Add(new MenuOption(() => text, onSelect));
+
+        /// <summary>Text read at the moment it is spoken (a toggle's state, a live counter, a slider value).</summary>
+        public void AddOption(Func<string> getText, Action onSelect) => _options.Add(new MenuOption(getText, onSelect));
+
+        public void Clear()
+        {
+            _options.Clear();
+            _index = 0;
+        }
+
+        /// <summary>Returns true when the key was for this menu, so the caller stops looking.</summary>
+        public bool HandleInput()
+        {
+            if (AccessibleKey.READ_NEXT_MENU_OPTION.IsPressed()) return ReadOption(_index + 1);
+            if (AccessibleKey.READ_PREV_MENU_OPTION.IsPressed()) return ReadOption(_index - 1);
+            if (AccessibleKey.READ_FIRST_ITEM.IsPressed()) return ReadOption(0);
+            if (AccessibleKey.READ_LAST_ITEM.IsPressed()) return ReadOption(_options.Count - 1);
+            if (AccessibleKey.CONFIRM.IsPressed() || AccessibleKey.SPACE.IsPressed()) return SelectOption();
+            if (AccessibleKey.BACK.IsPressed() || AccessibleKey.ESCAPE.IsPressed()) return GoBack();
+            var n = AccessibleKey.TryGetPressedNumber();
+            if (n.HasValue) return ReadOption(n.Value - 1);
+            return false;
+        }
+
+        /// <summary>Menu name (if any), then the current option. Call from the parent's OnGainedFocus.</summary>
+        public void StartReading(bool readMenuName = true)
+        {
+            var nameSpoken = readMenuName && !string.IsNullOrEmpty(_menuName);
+            if (nameSpoken) Output(_menuName);
+            if (_options.Count == 0)
+            {
+                Output(LocalizationUtils.Get(LocalizationKey.MENU_NO_ITEMS), interrupt: !nameSpoken);
+                return;
+            }
+            _index = Math.Min(_index, _options.Count - 1);
+            Output(OptionSpeech(_index), interrupt: !nameSpoken);
+        }
+
+        public void SetIndex(int index) => _index = Math.Max(0, Math.Min(index, _options.Count - 1));
+
+        public string GetHelp() => LocalizationUtils.Get(_goBackAction != null ? LocalizationKey.MENU_HELP_WITH_BACK : LocalizationKey.MENU_HELP);
+
+        public bool GoBack()
+        {
+            if (_goBackAction == null) return false;
+            _goBackAction();
+            return true;
+        }
+
+        private bool ReadOption(int index)
+        {
+            if (index < 0 || index >= _options.Count) return true; // at an edge: swallow the key, stay put
+            _index = index;
+            Output(OptionSpeech(index));
+            return true;
+        }
+
+        private bool SelectOption()
+        {
+            if (_options.Count == 0) return false;
+            _options[_index].OnSelect();
+            return true;
+        }
+
+        // "Play, 1 of 4": label first, position after, so a fast listener can skip the position.
+        private string OptionSpeech(int index) =>
+            LocalizationUtils.Format(LocalizationKey.MENU_OPTION_FORMAT, _options[index].GetText(), index + 1, _options.Count);
+    }
+}

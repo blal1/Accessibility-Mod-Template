@@ -1,0 +1,34 @@
+using System.Collections.Generic;
+
+namespace NAMESPACE
+{
+    /// <summary>
+    /// One language's text, parsed from the translator-friendly tab-separated files Hearthstone Access uses:
+    ///   KEY&lt;TAB&gt;TEXT&lt;TAB&gt;COMMENT
+    /// A header line "TAG&lt;TAB&gt;TEXT&lt;TAB&gt;COMMENT", blank lines and lines starting with # are skipped.
+    /// \n and \t inside TEXT are escapes. COMMENT is for translators only (what {0} is, where it is spoken).
+    ///
+    /// Pure C#: no Unity, no game types, so the offline test project compiles this exact file.
+    /// </summary>
+    public sealed class LocalizationTable
+    {
+        private readonly Dictionary<string, string> _entries = new Dictionary<string, string>();
+
+        public IReadOnlyDictionary<string, string> Entries => _entries;
+
+        public bool TryGet(string key, out string text) => _entries.TryGetValue(key, out text) && text.Length > 0;
+
+        /// <summary>Adds every line of one .txt file. Later files win on a duplicate key; the tests forbid duplicates.</summary>
+        public void Add(string fileText)
+        {
+            foreach (var raw in fileText.Split('\n'))
+            {
+                var line = raw.TrimEnd('\r');
+                if (line.Length == 0 || line[0] == '#' || line.StartsWith("TAG\t")) continue;
+                var cols = line.Split('\t');
+                if (cols.Length < 2 || cols[0].Length == 0) continue;
+                _entries[cols[0]] = cols[1].Replace("\\n", "\n").Replace("\\t", "\t");
+            }
+        }
+    }
+}

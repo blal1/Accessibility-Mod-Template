@@ -1,0 +1,64 @@
+namespace NAMESPACE
+{
+    // ============================================================================
+    // The focus model (Hearthstone Access): see docs/03-architecture.md
+    // ============================================================================
+    // AccessibilityMgr gives the keyboard and the voice to exactly ONE component at a time:
+    // the top AccessibleUI if any is open, else the current AccessibleScreen.
+    // Every other component's speech is dropped. This replaces "state manager / bool flag"
+    // designs: there is nothing to coordinate, because nothing else is asked for input.
+    // ============================================================================
+
+    /// <summary>
+    /// Something that can own the keyboard and the voice.
+    /// All three methods run inside AccessibilityMgr's exception guard, so a bug here
+    /// is logged once and never unwinds into the game's call stack.
+    /// </summary>
+    public interface AccessibleComponent
+    {
+        /// <summary>Called every frame while this component has focus. Read keys with AccessibleKey.X.IsPressed().</summary>
+        void HandleInput();
+
+        /// <summary>F1: the keys that work RIGHT NOW, in the player's language. Context-sensitive, never a global list.</summary>
+        string GetHelp();
+
+        /// <summary>
+        /// This component just got focus (it was shown, a UI above it closed, the game window came back):
+        /// say where the player is (title + current item), nothing more.
+        /// </summary>
+        void OnGainedFocus();
+    }
+
+    /// <summary>A base screen of the game (title, hub, world, battle). Only one at a time: AccessibilityMgr.SetScreen / ClearScreen.</summary>
+    public interface AccessibleScreen : AccessibleComponent { }
+
+    /// <summary>A popup, overlay, modal or sub-menu over the current screen. Stacked: AccessibilityMgr.ShowUI / HideUI.</summary>
+    public interface AccessibleUI : AccessibleComponent { }
+
+    /// <summary>
+    /// Marks a static parameterless method that AccessibilityMgr runs every frame, whatever has focus.
+    /// ONLY for game surfaces with no method to hook (detected by state). Prefer a hook: polling costs every frame.
+    /// </summary>
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public sealed class AccessibilityPollerAttribute : System.Attribute { }
+
+    /// <summary>
+    /// A reusable building block (AccessibleMenu, AccessibleItem, AccessibleListOfItems) owned by a component.
+    /// It speaks THROUGH its parent, so it falls silent automatically whenever the parent loses focus.
+    /// </summary>
+    public abstract class AccessibleElement
+    {
+        /// <summary>The component this element belongs to and speaks through.</summary>
+        protected AccessibleComponent Parent { get; }
+
+        protected AccessibleElement(AccessibleComponent parent)
+        {
+            Parent = parent;
+        }
+
+        protected void Output(string text, bool interrupt = true)
+        {
+            AccessibilityMgr.Output(Parent, text, interrupt);
+        }
+    }
+}

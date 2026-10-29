@@ -32,7 +32,7 @@ Die wichtigsten statischen Instanzen zum Zugriff auf Spielsysteme.
 
 ---
 
-## 2. Spiel-Tastenbelegungen (NICHT im Mod überschreiben!)
+## 2. Game Key Bindings (Spiel-Tastenbelegungen, NICHT im Mod überschreiben!)
 
 **KRITISCH: Diese Tasten werden vom Spiel verwendet. Der Mod darf sie NICHT anderweitig belegen!**
 
@@ -65,7 +65,7 @@ Die wichtigsten statischen Instanzen zum Zugriff auf Spielsysteme.
 
 ---
 
-## 3. Sichere Tasten für den Mod
+## 3. Safe Mod Keys (sichere Tasten für den Mod)
 
 Diese Tasten sind im Spiel NICHT belegt und können für Mod-Funktionen genutzt werden.
 
@@ -270,7 +270,7 @@ Diese Tasten sind im Spiel NICHT belegt und können für Mod-Funktionen genutzt 
 
 ---
 
-## 9. Event-Hooks für Harmony-Patches
+## 9. Hook-Ziele (Event-Hooks für Harmony-Patches)
 
 ### UI-Events (beste Patch-Punkte)
 
@@ -282,6 +282,8 @@ Diese Tasten sind im Spiel NICHT belegt und können für Mod-Funktionen genutzt 
 - `[Klasse].[Methode]` - [Beschreibung]
 
 **Selection ändern**
+
+(Pro Hook: Klasse, Methode, was `__instance` ist, wann er feuert, welche Accessible-Komponente ihn benutzt, durch welche Runtime-Probe bestätigt.)
 - `[Klasse].[Methode]` - Wird aufgerufen wenn Auswahl sich ändert
 
 ### Gameplay-Events
@@ -301,11 +303,14 @@ Diese Tasten sind im Spiel NICHT belegt und können für Mod-Funktionen genutzt 
 
 ---
 
-## 10. Lokalisierung
+## 10. Localization (Lokalisierung)
 
 - Übersetzungs-Methode: `[Methode zum Abrufen von übersetztem Text]`
 - Sprach-Dateien: `[Pfad/Format]`
-- Fallback-Verhalten: `[Was passiert wenn Key nicht gefunden?]`
+- Fallback-Verhalten: `[Was passiert wenn Key nicht gefunden? Gibt die Methode die ID zurück?]`
+- Aktuelle Sprache: `[Klasse.Property, Format z.B. "de", "de-DE", Enum]` → füllt `LocalizationUtils.GetGameLanguageTag()`
+- Spieltext per ID: `[Aufruf]` → füllt `LocalizationUtils.GetGame()`
+- Eingabe-Backend: `[Legacy Input / Input System / beide]` → AccessibleKey (Anhang A, "Input System vs legacy Input")
 
 ---
 

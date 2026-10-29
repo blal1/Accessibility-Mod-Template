@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Offline checks, no game launch:   dotnet test Tests
+       - LocalizationTests: every key has English text, translations keep placeholders, nothing speaks a literal.
+       - ArchitectureTests: only AccessibilityMgr speaks, only AccessibleKey/Main read raw keys.
+       - GameCompatTests: every game member the mod names exists in the INSTALLED game build (needs GameDir).
+       Copy this folder to Tests\ at the project root and replace MODNAME, SPIELORDNER, SPIELNAME.
+       See docs/05-quality-and-updates.md. Adapted from PTCGL Access (MIT, see THIRD-PARTY-NOTICES.md). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The game folder: the "game" junction at the project root if present (docs/01-setup-and-tooling.md), else the path. -->
+    <GameDir Condition="'$(GameDir)' == '' And Exists('$(MSBuildThisFileDirectory)..\game')">$(MSBuildThisFileDirectory)..\game</GameDir>
+    <GameDir Condition="'$(GameDir)' == ''">SPIELORDNER</GameDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+  </ItemGroup>
+
+  <!-- The TSV parser is pure C#: the tests use the mod's own file, so test and game read text identically. -->
+  <ItemGroup>
+    <Compile Include="..\Accessibility\Localization\LocalizationTable.cs" Link="Linked\LocalizationTable.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>GameDir</_Parameter1>
+      <_Parameter2>$(GameDir)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>GameDataDir</_Parameter1>
+      <_Parameter2>SPIELNAME_Data</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

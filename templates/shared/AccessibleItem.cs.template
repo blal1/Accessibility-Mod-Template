@@ -1,0 +1,81 @@
+using System.Collections.Generic;
+
+namespace NAMESPACE
+{
+    /// <summary>
+    /// Something read LINE BY LINE (a card, an item, a quest, a character sheet), as in Hearthstone Access:
+    /// Down/Up next and previous line, Shift+Up repeat the current line, Shift+Down read to the end.
+    /// The first line is the short form spoken when the item gets focus (usually the name).
+    ///
+    /// Lines are rebuilt on EVERY read from live game data, so they are never stale:
+    ///   protected internal override List&lt;string&gt; GetLines() => new List&lt;string&gt; { _item.Name, _item.Description, ... };
+    /// Empty lines are dropped, so optional details can simply be added as "" when absent.
+    /// </summary>
+    public abstract class AccessibleItem : AccessibleElement
+    {
+        private List<string> _lines = new List<string>();
+        private int _line;
+
+        protected AccessibleItem(AccessibleComponent parent) : base(parent) { }
+
+        /// <summary>The item's lines, read live. First line = short form.</summary>
+        protected internal abstract List<string> GetLines();
+
+        public string GetLine(int line)
+        {
+            Refresh();
+            return line < _lines.Count ? _lines[line] : "";
+        }
+
+        public void ReadFirstLine()
+        {
+            _line = 0;
+            ReadCurrentLine();
+        }
+
+        public void Reset() => _line = 0;
+
+        /// <summary>Returns true when the key was for this item.</summary>
+        public virtual bool HandleInput()
+        {
+            if (AccessibleKey.READ_NEXT_LINE.IsPressed()) return Move(1);
+            if (AccessibleKey.READ_PREV_LINE.IsPressed()) return Move(-1);
+            if (AccessibleKey.READ_CUR_LINE.IsPressed())
+            {
+                ReadCurrentLine();
+                return true;
+            }
+            if (AccessibleKey.READ_TO_END.IsPressed())
+            {
+                Refresh();
+                for (var i = _line; i < _lines.Count; i++) Output(_lines[i], interrupt: i == _line);
+                _line = System.Math.Max(0, _lines.Count - 1);
+                return true;
+            }
+            return false;
+        }
+
+        private bool Move(int delta)
+        {
+            Refresh();
+            var target = _line + delta;
+            if (target < 0 || target >= _lines.Count) return true; // at an edge: swallow the key, stay put
+            _line = target;
+            Output(_lines[_line]);
+            return true;
+        }
+
+        private void ReadCurrentLine()
+        {
+            Refresh();
+            if (_line < _lines.Count) Output(_lines[_line]);
+        }
+
+        private void Refresh()
+        {
+            _lines = GetLines() ?? new List<string>();
+            _lines.RemoveAll(string.IsNullOrWhiteSpace);
+            if (_line >= _lines.Count) _line = System.Math.Max(0, _lines.Count - 1);
+        }
+    }
+}
