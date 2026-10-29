@@ -1,162 +1,162 @@
-# Appendix C: Legacy Unity (Modding bei alten Unity-Versionen)
+# Appendix C: Legacy Unity (modding old Unity versions)
 
-## Unity-Versionen und Mod-Loader-Kompatibilität
+## Unity versions and mod loader compatibility
 
-- **Unity 2019+**: MelonLoader, BepInEx, Doorstop - alle funktionieren
-- **Unity 2017-2018**: MelonLoader, BepInEx, Doorstop - alle funktionieren
-- **Unity 5.x**: Teilweise MelonLoader, teilweise BepInEx, evtl. Doorstop, Assembly-Patch als Fallback
-- **Unity 4.x oder älter**: Nur Assembly-Patching funktioniert
+- **Unity 2019+**: MelonLoader, BepInEx, Doorstop - all work
+- **Unity 2017-2018**: MelonLoader, BepInEx, Doorstop - all work
+- **Unity 5.x**: MelonLoader in some games, BepInEx in some, possibly Doorstop, assembly patching as the fallback
+- **Unity 4.x or older**: only assembly patching works
 
-## Vor dem Setup prüfen
+## Check before setup
 
-### 1. Unity-Version ermitteln
+### 1. Find the Unity version
 
-Die Unity-Version steht in:
-- `[Game]_Data/output_log.txt` (erste Zeile: "Initialize engine version: X.X.X")
-- Oder im Crash-Log
-- Oder im MelonLoader-Log nach erstem Start
+The Unity version is in:
+- `[Game]_Data/output_log.txt` (first line: "Initialize engine version: X.X.X")
+- Or in the crash log
+- Or in the MelonLoader log after the first start
 
-### 2. Architektur prüfen
+### 2. Check the architecture
 
-- `Mono/` Ordner = 32-bit, altes Mono
-- `MonoBleedingEdge/` Ordner = 64-bit, neueres Mono
-- Spiel in "Program Files (x86)" = oft 32-bit
+- `Mono/` folder = 32-bit, old Mono
+- `MonoBleedingEdge/` folder = 64-bit, newer Mono
+- Game in "Program Files (x86)" = often 32-bit
 
-### 3. Community-Recherche
+### 3. Community research
 
-**Immer zuerst prüfen:**
-- Gibt es bereits Mods für das Spiel?
-- Welches Framework nutzt die Community?
-- Gibt es ein offizielles Mod-System?
+**Always check first:**
+- Are there already mods for the game?
+- Which framework does the community use?
+- Is there an official mod system?
 
-**Suchbegriffe:**
-- "[Spielname] modding guide"
-- "[Spielname] BepInEx"
-- "[Spielname] MelonLoader"
-- "[Spielname] dll mod"
+**Search terms:**
+- "[Game name] modding guide"
+- "[Game name] BepInEx"
+- "[Game name] MelonLoader"
+- "[Game name] dll mod"
 
-**Wo suchen:**
-- Steam-Diskussionen
+**Where to search:**
+- Steam discussions
 - Nexus Mods
 - ModDB
 - GitHub
-- Offizielle Foren des Entwicklers
+- The developer's official forums
 
-## Mod-Loader nach Priorität versuchen
+## Try mod loaders in order of priority
 
-### Bei Unity 2017+
+### Unity 2017+
 
-1. **MelonLoader** - Einfachste Option für Unity-Spiele
-2. **BepInEx** - Sehr verbreitet, gute Dokumentation
-3. **Doorstop** - Falls andere nicht funktionieren
+1. **MelonLoader** - the simplest option for Unity games
+2. **BepInEx** - very widespread, good documentation
+3. **Doorstop** - if the others do not work
 
-### Bei Unity 5.x
+### Unity 5.x
 
-1. **BepInEx 5.x** mit net35-Kompatibilität
+1. **BepInEx 5.x** with net35 compatibility
 2. **Doorstop v3** (legacy branch)
-3. **Assembly-Patching** als Fallback
+3. **Assembly patching** as the fallback
 
-### Bei Unity 4.x oder älter
+### Unity 4.x or older
 
-1. **Community-Lösung suchen** - Vielleicht hat jemand etwas gefunden
-2. **Assembly-Patching** - Meist die einzige funktionierende Option
+1. **Look for a community solution** - maybe someone has found a way
+2. **Assembly patching** - usually the only option that works
 
-## Assembly-Patching (Immer funktioniert)
+## Assembly patching (always works)
 
-### Was es ist
+### What it is
 
-Den Mod-Code direkt in die Spiel-DLL (`Assembly-CSharp.dll`) einfügen.
+Inserting the mod code directly into the game DLL (`Assembly-CSharp.dll`).
 
-### Vorteile
+### Advantages
 
-- Funktioniert mit jeder Unity-Version
-- Keine externen Tools zur Laufzeit
-- Keine Proxy-DLLs nötig
+- Works with every Unity version
+- No external tools at runtime
+- No proxy DLLs needed
 
-### Nachteile
+### Disadvantages
 
-- Ändert Original-Dateien (Backup machen!)
-- Bei Spiel-Updates muss neu gepatcht werden
-- Steam-Integritätsprüfung erkennt Änderung
+- Changes original files (make a backup!)
+- Has to be patched again after every game update
+- Steam's integrity check detects the change
 
 ### Tools
 
-- **dnSpy** - GUI-basiert, kann editieren und speichern
-- **ILSpy + Reflexil** - Alternative
+- **dnSpy** - GUI based, can edit and save
+- **ILSpy + Reflexil** - alternative
 
-### Vorgehen
+### Procedure
 
-1. Backup von `[Game]_Data/Managed/Assembly-CSharp.dll`
-2. DLL in dnSpy öffnen
-3. Geeignete Stelle finden (z.B. MainMenu.Start oder Awake)
-4. Code einfügen (Methode editieren oder neue Klasse)
-5. Speichern (Modul speichern)
-6. Testen
+1. Back up `[Game]_Data/Managed/Assembly-CSharp.dll`
+2. Open the DLL in dnSpy
+3. Find a suitable place (e.g. MainMenu.Start or Awake)
+4. Insert the code (edit a method or add a new class)
+5. Save (Save Module)
+6. Test
 
-### Geeignete Einstiegspunkte
+### Suitable entry points
 
-- `Awake()` oder `Start()` einer früh geladenen Klasse
-- Hauptmenü-Klasse (wird immer geladen)
-- Singleton-Initialisierung
+- `Awake()` or `Start()` of a class that loads early
+- The main menu class (always loaded)
+- Singleton initialization
 
-## Bekannte Probleme
+## Known problems
 
 ### "mono.dll Access Violation"
 
-- Tritt bei Unity 4.x mit BepInEx/Doorstop auf
-- Mono-Runtime zu alt für moderne Tools
-- Lösung: Assembly-Patching
+- Happens with Unity 4.x and BepInEx/Doorstop
+- The Mono runtime is too old for modern tools
+- Solution: assembly patching
 
 ### "Hooked into null"
 
-- MelonLoader kann sich nicht einhaken
-- Unity-Version nicht unterstützt
-- Lösung: Anderes Framework oder Assembly-Patching
+- MelonLoader cannot hook in
+- Unity version not supported
+- Solution: another framework or assembly patching
 
-### Spiel startet nicht (0xc0000142)
+### Game does not start (0xc0000142)
 
-- Proxy-DLL inkompatibel
-- Lösung: Proxy-DLL entfernen, anderen Ansatz wählen
+- Proxy DLL incompatible
+- Solution: remove the proxy DLL, choose another approach
 
-## Besonderheiten bei der UI-Analyse (alte Unity-Versionen)
+## UI analysis in old Unity versions
 
-Bei älteren Unity-Versionen können zusätzliche Herausforderungen auftreten:
+Older Unity versions can bring extra challenges:
 
-- **Ältere UI-Systeme:** Unity 4.x nutzt oft noch das alte `OnGUI`-System statt uGUI/Canvas
-- **Andere Komponenten-Namen:** `GUIText` statt `Text`, `GUITexture` statt `Image`
-- **Fehlende Features:** TextMeshPro existiert möglicherweise nicht
-- **Reflection-Unterschiede:** Private Fields können andere Naming-Conventions haben
+- **Older UI systems:** Unity 4.x often still uses the old `OnGUI` system instead of uGUI/Canvas
+- **Different component names:** `GUIText` instead of `Text`, `GUITexture` instead of `Image`
+- **Missing features:** TextMeshPro may not exist
+- **Reflection differences:** private fields may follow other naming conventions
 
-### OnGUI-System (Unity 4.x und früher)
+### The OnGUI system (Unity 4.x and earlier)
 
-Das alte OnGUI-System funktioniert komplett anders als moderne Unity UI:
+The old OnGUI system works completely differently from modern Unity UI:
 
 ```csharp
 void OnGUI() {
     if (GUI.Button(new Rect(10, 10, 100, 50), "Click me")) {
-        // Button wurde geklickt
+        // Button was clicked
     }
     GUI.Label(new Rect(10, 70, 100, 20), "Some text");
 }
 ```
 
-**Herausforderungen:**
-- UI wird jeden Frame neu gezeichnet (Immediate Mode)
-- Keine persistenten GameObjects für UI-Elemente
-- Schwieriger zu hoooken als moderne UI
-- Text ist oft nur im OnGUI-Aufruf bekannt
+**Challenges:**
+- The UI is redrawn every frame (immediate mode)
+- No persistent GameObjects for UI elements
+- Harder to hook than modern UI
+- Text is often only known inside the OnGUI call
 
-**Mögliche Lösungen:**
-- Harmony-Patch auf die OnGUI-Methode
-- GUI.skin und GUIStyle analysieren
-- Eigene Tracking-Logik für UI-Zustand
+**Possible solutions:**
+- Harmony patch on the OnGUI method
+- Analyze GUI.skin and GUIStyle
+- Own tracking logic for the UI state
 
-## Checkliste für alte Spiele
+## Checklist for old games
 
-- [ ] Unity-Version ermittelt
-- [ ] Architektur geprüft (32/64-bit)
-- [ ] Community-Lösungen recherchiert
-- [ ] Offizielles Mod-System geprüft
-- [ ] Mod-Loader in Reihenfolge versucht
-- [ ] Bei Fehlschlag: Assembly-Patching vorbereitet
-- [ ] Backup der Original-DLLs erstellt
+- [ ] Unity version found
+- [ ] Architecture checked (32/64-bit)
+- [ ] Community solutions researched
+- [ ] Official mod system checked
+- [ ] Mod loaders tried in order
+- [ ] If they fail: assembly patching prepared
+- [ ] Backup of the original DLLs made

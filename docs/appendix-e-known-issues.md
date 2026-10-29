@@ -9,8 +9,8 @@ This file is checked automatically during project setup (Step 4). When the game'
 ## Unity + MelonLoader
 
 - **Unity 6000.2.2f1**: MelonLoader fails to start. Throws null-reference errors during loader initialization. No workaround known — use BepInEx instead, or wait for a MelonLoader update.
-- **Unity 2022.3.62f2**: Crash beim Start während IL2CPP-Initialisierung. BepInEx 6 Bleeding Edge crasht ebenfalls. Kein Fix bekannt. ([GitHub Issue #1063](https://github.com/LavaGang/MelonLoader/issues/1063))
-- **Unity 2022.3.58**: UnityDependencies-Download schlägt fehl. **Fix:** MelonLoader auf die neueste Version aktualisieren — die fehlende Version wurde im Dependency-Repo nachgetragen. ([GitHub Issue #936](https://github.com/LavaGang/MelonLoader/issues/936))
+- **Unity 2022.3.62f2**: Crashes on startup during IL2CPP initialization. BepInEx 6 bleeding edge crashes as well. No fix known. ([GitHub Issue #1063](https://github.com/LavaGang/MelonLoader/issues/1063))
+- **Unity 2022.3.58**: The UnityDependencies download fails. **Fix:** update MelonLoader to the latest version — the missing version has since been added to the dependency repository. ([GitHub Issue #936](https://github.com/LavaGang/MelonLoader/issues/936))
 - **Unity 5.x**: MelonLoader generally does not support Unity 5. Use BepInEx 5.x instead. See `docs/appendix-c-legacy-unity.md`.
 - **Unity 4.x and older**: Neither MelonLoader nor BepInEx work. Only assembly patching is possible. See `docs/appendix-c-legacy-unity.md`.
 

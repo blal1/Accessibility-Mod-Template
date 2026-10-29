@@ -1230,35 +1230,42 @@ Requires `ilspycmd` and `git`. Never push or share `decompiled\`.
 
 ### Get-MelonLoaderInfo.ps1
 
-Reads the MelonLoader log and extracts all important values:
-- Game Name and Developer (for MelonGame attribute)
-- Runtime Type (for TargetFramework)
-- Unity Version
+Reads `MelonLoader\Latest.log` and extracts the values the project needs:
+- Game Name and Game Developer (for the MelonGame attribute)
+- Runtime Type (net35 or net6: TargetFramework and the MelonLoader DLL folder `RUNTIME_ORDNER` in the csproj)
+- Game Type (Mono or Il2Cpp), Game Arch, Unity version and MelonLoader version, when the log has them
+
+It also warns about very old Unity versions (see `docs/appendix-c-legacy-unity.md`) and about a game path with non-ASCII characters.
 
 **Usage:**
 ```powershell
 .\scripts\Get-MelonLoaderInfo.ps1 -GamePath "C:\Path\to\Game"
 ```
 
-**Output:** Ready-to-copy code snippets.
+Without `-GamePath` it reads the log through the `game` junction, if there is one.
+
+**Output:** Ready-to-copy MelonGame attribute and csproj values.
 
 ### Test-ModSetup.ps1
 
-Validates if everything is set up correctly:
-- Mod loader installation (MelonLoader or BepInEx)
-- Tolk DLLs (also checks correct architecture!)
-- Project file and references
-- Mod loader attributes (MelonGame or BepInPlugin)
-- Decompiled directory
+Validates the whole project against this template, in eight groups:
+1. Game folder: exists, game EXE, architecture (read from the EXE header), Unity Mono or Il2Cpp, the optional `game` junction.
+2. Mod loader: detects MelonLoader or BepInEx, checks its DLL, log and mods folder; for MelonLoader also that the game path is plain ASCII.
+3. Speech DLL: Prism or Tolk (with `nvdaControllerClient64.dll` or `nvdaControllerClient32.dll`) next to the EXE, each with the game's architecture, plus every DLL that `ScreenReader.cs` imports.
+4. Project files: csproj (placeholders replaced, TargetFramework not netstandard2.0, `decompiled`, `templates`, `Tests` and `recon` excluded, localization embedded, loader reference, copy target), Main.cs with MelonGame or BepInPlugin, ScreenReader.cs, DebugLogger.cs, ModConfig.cs.
+5. Accessibility core: AccessibilityMgr, components, AccessibleKey, menus, Compat, ReflectionHelper and the localization classes; warns about leftovers of the old handler architecture.
+6. Localization: `Localization\en\*.txt` exists, and every key declared in `LocalizationKey*.cs` has an English line (a quick check; `dotnet test Tests` is the full one).
+7. The `Tests` project.
+8. `decompiled\`: its own git repository with one branch per game version and no remote; `decompiled/` and `recon-records/` are gitignored.
 
 **Usage:**
 ```powershell
-.\scripts\Test-ModSetup.ps1 -GamePath "C:\Path\to\Game" -Architecture x64
+.\scripts\Test-ModSetup.ps1 -GamePath "C:\Path\to\Game"
 ```
 
-Parameter `-Architecture` can be `x64` or `x86`.
+`-ProjectPath` defaults to the current folder, `-GamePath` to the `game` junction, `-Architecture` (`x64` or `x86`) to what the game EXE says.
 
-**Output:** List of all checks with OK, WARNING or ERROR, plus solution suggestions.
+**Output:** One line per check starting with OK, WARNING or ERROR, each problem with a "Fix:" line. Exit code 1 if there are errors.
 
 ---
 

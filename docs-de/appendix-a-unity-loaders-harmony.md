@@ -1,6 +1,8 @@
 # Anhang A: Unity-Loader, Harmony, Tolk
 
-Kompakte Übersicht: MelonLoader, BepInEx, Harmony, Tolk und Unity-Eingabe. Die Architektur dahinter steht in `docs/03-architecture.md` (Englisch); die Vorlagen in `templates/melonloader/` und `templates/bepinex/` enthalten bereits alles hier Gezeigte.
+Deutsche Fassung von `docs/appendix-a-unity-loaders-harmony.md`.
+
+Kompakte Übersicht: MelonLoader, BepInEx, Harmony, Tolk und Unity-Eingabe. Die Architektur, der all das dient, steht in `docs-de/03-architecture.md`; die Vorlagen in `templates/melonloader/` und `templates/bepinex/` enthalten bereits alles hier Gezeigte.
 
 ---
 
@@ -10,21 +12,21 @@ Kompakte Übersicht: MelonLoader, BepInEx, Harmony, Tolk und Unity-Eingabe. Die 
 
 ```xml
 <Reference Include="MelonLoader">
-    <HintPath>[Spielordner]\MelonLoader\net6\MelonLoader.dll</HintPath>
+    <HintPath>[GameDirectory]\MelonLoader\net6\MelonLoader.dll</HintPath>
 </Reference>
 <Reference Include="UnityEngine.CoreModule">
-    <HintPath>[Spielordner]\MelonLoader\Managed\UnityEngine.CoreModule.dll</HintPath>
+    <HintPath>[GameDirectory]\MelonLoader\Managed\UnityEngine.CoreModule.dll</HintPath>
 </Reference>
 <Reference Include="Assembly-CSharp">
-    <HintPath>[Spielordner]\[Spiel]_Data\Managed\Assembly-CSharp.dll</HintPath>
+    <HintPath>[GameDirectory]\[Game]_Data\Managed\Assembly-CSharp.dll</HintPath>
 </Reference>
 ```
 
 ### MelonInfo Attribut
 
 ```csharp
-[assembly: MelonInfo(typeof(MyNamespace.Main), "ModName", "1.0.0", "Autor")]
-[assembly: MelonGame("Entwickler", "Spielname")]
+[assembly: MelonInfo(typeof(MyNamespace.Main), "ModName", "1.0.0", "Author")]
+[assembly: MelonGame("Developer", "GameName")]
 ```
 
 ### Lebenszyklus
@@ -32,10 +34,10 @@ Kompakte Übersicht: MelonLoader, BepInEx, Harmony, Tolk und Unity-Eingabe. Die 
 ```csharp
 public class Main : MelonMod
 {
-    public override void OnInitializeMelon() { }  // Einmalig beim Laden
-    public override void OnUpdate() { }            // Jeden Frame
+    public override void OnInitializeMelon() { }  // Once on load
+    public override void OnUpdate() { }            // Every frame
     public override void OnSceneWasLoaded(int buildIndex, string sceneName) { }
-    public override void OnApplicationQuit() { }   // Beim Beenden
+    public override void OnApplicationQuit() { }   // On exit
 }
 ```
 
@@ -45,7 +47,7 @@ public class Main : MelonMod
 
 Das betrifft:
 - Spielmanager-Singletons (z.B. `GameManager.i`, `AudioManager.instance`)
-- `typeof(SpielKlasse)` - auch in Harmony-Attributen!
+- `typeof(GameClass)` - auch in Harmony-Attributen!
 - Jede Referenz auf Spielklassen in Feldern oder frühen Methoden
 
 **Erlaubt nach Zeitpunkt:**
@@ -59,15 +61,15 @@ Das betrifft:
 Erst in/nach `OnSceneWasLoaded()`. Sicherer Test: Ein zuverlässiges UI-Element prüfen:
 
 ```csharp
-if (GameObject.Find("HauptUI") == null)
-    return; // Spiel noch nicht bereit
+if (GameObject.Find("MainUI") == null)
+    return; // Game not ready yet
 ```
 
 **Fehler 1: zu frühes Patchen bei einem Spiel, das das nicht verträgt**
 
-`typeof(SpielKlasse)` in einem `[HarmonyPatch]`-Attribut wird ausgewertet, wenn die Attribute gelesen werden, also wenn `Compat.PatchAll` läuft (nicht beim Laden der Mod-Assembly). Das Patchen lädt die Spieltypen, führt aber normalerweise keinen Spielcode aus. Bei den meisten Spielen ist `Compat.PatchAll` in `OnInitializeMelon` / `Awake` daher in Ordnung; so machen es die Vorlagen. `Compat.ScanStatics` führt die statischen Konstruktoren der Mod aus, die dürfen also keine Spiel-Singletons anfassen (`static readonly`-Felder nur für FieldInfo- und MethodInfo-Lookups).
+`typeof(GameClass)` in einem `[HarmonyPatch]`-Attribut wird ausgewertet, wenn die Attribute gelesen werden, also wenn `Compat.PatchAll` läuft (nicht beim Laden der Mod-Assembly). Das Patchen lädt die Spieltypen, führt aber normalerweise keinen Spielcode aus. Bei den meisten Spielen ist `Compat.PatchAll` in `OnInitializeMelon` / `Awake` daher in Ordnung; so machen es die Vorlagen. `Compat.ScanStatics` führt die statischen Konstruktoren der Mod aus, die dürfen also keine Spiel-Singletons anfassen (`static readonly`-Felder nur für FieldInfo- und MethodInfo-Lookups).
 
-Manche Spiele stürzen ab oder hängen, wenn ihre Typen vor der ersten Szene angefasst werden. Symptom: das Spiel stirbt direkt nachdem der Loader den Mod-Namen ausgibt. Dann die drei Compat-Aufrufe in den ersten Szenen-Load verschieben:
+Manche Spiele stürzen ab oder hängen, wenn ihre Typen vor der ersten Szene angefasst werden (statische Konstruktoren, die eine laufende Engine brauchen, IL2CPP-Interop noch nicht bereit). Symptom: das Spiel stirbt direkt nachdem der Loader den Mod-Namen ausgibt. Dann die drei Compat-Aufrufe in den ersten Szenen-Load verschieben:
 
 ```csharp
 private bool _patched;
@@ -83,12 +85,12 @@ public override void OnSceneWasLoaded(int buildIndex, string sceneName)
 }
 ```
 
-Die Hooks behalten ihre `[HarmonyPatch(typeof(SpielKlasse), "Methode")]`-Attribute. Nie zurück zu `harmony.PatchAll()` (ein kaputtes Ziel stoppt alle Patches) oder zu handgeschriebenen `_harmony.Patch(...)`-Aufrufen (die entgehen dem Offline-Kompatibilitätstest).
+Die Hooks behalten ihre `[HarmonyPatch(typeof(GameClass), "Method")]`-Attribute in beiden Fällen; nie zurück zu `harmony.PatchAll()` (ein kaputtes Ziel stoppt alle Patches) oder zu handgeschriebenen `_harmony.Patch(...)`-Aufrufen (die entgehen dem Offline-Kompatibilitätstest).
 
 **Fehler 2: Singleton-Zugriff zu früh**
 
 ```csharp
-// FALSCH - Singleton kann blockieren oder crashen
+// WRONG - Singleton can block or crash
 public override void OnUpdate()
 {
     var manager = GameManager.i;
@@ -96,15 +98,15 @@ public override void OnUpdate()
 ```
 
 ```csharp
-// RICHTIG - Erst prüfen, dann cachen
+// CORRECT - Check first, then cache
 private GameManager _cachedManager = null;
 
 private GameManager GetManagerSafe()
 {
     if (_cachedManager != null) return _cachedManager;
 
-    if (GameObject.Find("HauptUI") == null)
-        return null; // Spiel noch nicht bereit
+    if (GameObject.Find("MainUI") == null)
+        return null; // Game not ready yet
 
     _cachedManager = GameManager.i;
     return _cachedManager;
@@ -115,13 +117,13 @@ private GameManager GetManagerSafe()
 
 ```csharp
 MelonLogger.Msg("Info");
-MelonLogger.Warning("Warnung");
-MelonLogger.Error("Fehler");
+MelonLogger.Warning("Warning");
+MelonLogger.Error("Error");
 ```
 
 ### Tasteneingaben
 
-Features lesen Tasten nie direkt: sie deklarieren einen `AccessibleKey` und prüfen `IsPressed()` (`docs/03-architecture.md`, "Keys"). Nur AccessibleKey (und Main für F12) ruft Unitys Input auf; siehe "Input System vs. Legacy Input" weiter unten.
+Features lesen Tasten nie direkt: sie deklarieren einen `AccessibleKey` und prüfen `IsPressed()` (`docs-de/03-architecture.md`, "Tasten"). Nur AccessibleKey (und Main für F12) ruft Unitys Input auf; siehe "Input System vs. Legacy Input" weiter unten.
 
 ---
 
@@ -131,26 +133,26 @@ Features lesen Tasten nie direkt: sie deklarieren einen `AccessibleKey` und prü
 
 ```xml
 <Reference Include="BepInEx">
-    <HintPath>[Spielordner]\BepInEx\core\BepInEx.dll</HintPath>
+    <HintPath>[GameDirectory]\BepInEx\core\BepInEx.dll</HintPath>
 </Reference>
 <Reference Include="0Harmony">
-    <HintPath>[Spielordner]\BepInEx\core\0Harmony.dll</HintPath>
+    <HintPath>[GameDirectory]\BepInEx\core\0Harmony.dll</HintPath>
 </Reference>
 <Reference Include="UnityEngine">
-    <HintPath>[Spielordner]\[Spiel]_Data\Managed\UnityEngine.dll</HintPath>
+    <HintPath>[GameDirectory]\[Game]_Data\Managed\UnityEngine.dll</HintPath>
 </Reference>
 <Reference Include="UnityEngine.CoreModule">
-    <HintPath>[Spielordner]\[Spiel]_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    <HintPath>[GameDirectory]\[Game]_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
 </Reference>
 <Reference Include="Assembly-CSharp">
-    <HintPath>[Spielordner]\[Spiel]_Data\Managed\Assembly-CSharp.dll</HintPath>
+    <HintPath>[GameDirectory]\[Game]_Data\Managed\Assembly-CSharp.dll</HintPath>
 </Reference>
 ```
 
 ### BepInPlugin Attribut
 
 ```csharp
-[BepInPlugin("com.autor.modname", "ModName", "1.0.0")]
+[BepInPlugin("com.author.modname", "ModName", "1.0.0")]
 ```
 
 - Erster Parameter: Eindeutige GUID (umgekehrte Domain-Notation)
@@ -163,12 +165,12 @@ Features lesen Tasten nie direkt: sie deklarieren einen `AccessibleKey` und prü
 using BepInEx;
 using UnityEngine;
 
-[BepInPlugin("com.autor.modname", "ModName", "1.0.0")]
+[BepInPlugin("com.author.modname", "ModName", "1.0.0")]
 public class Main : BaseUnityPlugin
 {
-    void Awake() { }     // Einmalig beim Laden (wie OnInitializeMelon)
-    void Update() { }    // Jeden Frame (wie OnUpdate)
-    void OnDestroy() { } // Beim Beenden (wie OnApplicationQuit)
+    void Awake() { }    // Once on load (like OnInitializeMelon)
+    void Update() { }   // Every frame (like OnUpdate)
+    void OnDestroy() { } // On exit (like OnApplicationQuit)
 }
 ```
 
@@ -187,7 +189,7 @@ void Awake()
 
 private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
 {
-    Logger.LogInfo($"Scene geladen: {scene.name}");
+    Logger.LogInfo($"Scene loaded: {scene.name}");
 }
 ```
 
@@ -205,7 +207,7 @@ void Update()
 {
     if (!_gameReady)
     {
-        // Auf Spiel-Singletons prüfen — ans Spiel anpassen!
+        // Check for game singletons — adjust to your game!
         // if (GameManager.instance != null)
         //     _gameReady = true;
         // else
@@ -213,16 +215,16 @@ void Update()
         return;
     }
 
-    // Spiellogik hier
+    // Game logic here
 }
 ```
 
 ### Logging
 
 ```csharp
-Logger.LogInfo("Info");       // Instanz-Logger (innerhalb der Plugin-Klasse)
-Logger.LogWarning("Warnung");
-Logger.LogError("Fehler");
+Logger.LogInfo("Info");      // Instance logger (within plugin class)
+Logger.LogWarning("Warning");
+Logger.LogError("Error");
 ```
 
 ### Tasteneingaben
@@ -244,18 +246,18 @@ Harmony ist in MelonLoader und BepInEx enthalten - kein extra Import nötig.
 Beide Loader: eine Harmony-Instanz erzeugen und jede Patch-Klasse über Compat anwenden (wie in den Main-Vorlagen), nie `harmony.PatchAll()`:
 
 ```csharp
-_harmony = new HarmonyLib.Harmony("com.autor.modname");
+_harmony = new HarmonyLib.Harmony("com.author.modname");
 var asm = typeof(Main).Assembly;
-Compat.PatchAll(_harmony, asm);   // jede [HarmonyPatch]-Klasse einzeln; Fehler werden gemeldet, nicht fatal
-Compat.ScanStatics(asm);          // static readonly FieldInfo/MethodInfo, die null ergaben
-Compat.ReportStartup();           // Log + gesprochene Anzahl, falls etwas nicht zur Spielversion passt
+Compat.PatchAll(_harmony, asm);   // each [HarmonyPatch] class separately; failures reported, not fatal
+Compat.ScanStatics(asm);          // static readonly FieldInfo/MethodInfo that resolved to null
+Compat.ReportStartup();           // log + spoken count if anything did not match this game version
 ```
 
 MelonLoader: in `OnInitializeMelon`. BepInEx: in `Awake`. Falls das Spiel es erst später erlaubt, siehe "Zugriff auf Spielcode" oben.
 
 ### Wo Patches stehen
 
-Patch-Klassen stehen verschachtelt in der Komponente, der sie dienen (`docs/03-architecture.md`, "Hooks"), und jeder Rumpf läuft in `AccessibilityMgr.Guard`, weil Hooks im Aufrufstapel des Spiels laufen und eine entkommene Exception das Spiel beschädigen kann.
+Patch-Klassen stehen verschachtelt in der Komponente, der sie dienen (`docs-de/03-architecture.md`, "Hooks"), und jeder Rumpf läuft in `AccessibilityMgr.Guard`, weil Hooks im Aufrufstapel des Spiels laufen und eine entkommene Exception das Spiel beschädigen kann.
 
 ### Postfix (nach Originalmethode)
 
@@ -277,7 +279,7 @@ public class HealthPatch
     [HarmonyPostfix]
     public static void Postfix(ref int __result)
     {
-        MelonLogger.Msg($"Gesundheit: {__result}");
+        MelonLogger.Msg($"Health: {__result}");
     }
 }
 ```
@@ -291,12 +293,12 @@ public class DamagePatch
     [HarmonyPrefix]
     public static void Prefix(Player __instance, int damage)
     {
-        // Prefix: Zustand erfassen, den die Originalmethode gleich ändert
+        // Prefix: capture state the original method is about to change
         AccessibilityMgr.Guard("DamagePatch", () =>
             AccessibilityMgr.OutputNotification(LocalizationUtils.Format(LocalizationKey.STATUS_DAMAGE_TAKEN, damage)));
     }
 
-    // Return false um Original zu überspringen:
+    // Return false to skip original:
     // public static bool Prefix() { return false; }
 }
 ```
@@ -393,7 +395,7 @@ public override void OnInitializeMelon()
 {
     ScreenReader.Initialize();
     ModConfig.Initialize();
-    AccessibilityMgr.Initialize(typeof(Main).Assembly);   // sagt "MODNAME loaded"
+    AccessibilityMgr.Initialize(typeof(Main).Assembly);   // speaks "MODNAME loaded"
 }
 
 public override void OnApplicationQuit()
@@ -424,7 +426,7 @@ void OnDestroy()
 ### GameObjects finden
 
 ```csharp
-var obj = GameObject.Find("Name");  // Langsam!
+var obj = GameObject.Find("Name");  // Slow!
 var all = GameObject.FindObjectsOfType<Button>();
 ```
 
@@ -456,9 +458,9 @@ obj.SetActive(true);
 
 Die Muster, die früher hier standen (Menü geöffnet ansagen, "3 von 12", Statusänderungen, Duplikate vermeiden), sind jetzt Teil des Kerns:
 
-- UI geöffnet und geschlossen: Öffnen- und Schließen-Hooks rufen `AccessibilityMgr.ShowUI` / `HideUI`; die Komponente sagt sich in `OnGainedFocus` selbst an (`docs/04-building-screens.md`).
+- UI geöffnet und geschlossen: Öffnen- und Schließen-Hooks rufen `AccessibilityMgr.ShowUI` / `HideUI`; die Komponente sagt sich in `OnGainedFocus` selbst an (`docs-de/04-building-screens.md`).
 - Menü-Navigation mit Position: AccessibleMenu und AccessibleListOfItems ("Spielen, 1 von 4").
-- Statusänderungen: ein Hook auf die Änderungsmethode des Spiels oder ein Poller, der mit dem letzten Wert vergleicht (`docs/05-quality-and-updates.md`).
+- Statusänderungen: ein Hook auf die Änderungsmethode des Spiels oder ein Poller, der mit dem letzten Wert vergleicht (`docs-de/05-quality-and-updates.md`, "Pro Frame prüfen, bei Änderung handeln").
 - Duplikate: nur bei Änderung ansagen; verdeckte Komponenten können gar nicht sprechen.
 
 ---
@@ -510,11 +512,11 @@ Die direkten Tolk-Aufrufe in `ScreenReader.cs` durch eine plattformabhängige Ab
 public static void Initialize()
 {
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        _backend = new TolkBackend();       // Bestehende Tolk-Integration
+        _backend = new TolkBackend();       // Existing Tolk integration
     else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         _backend = new SpeechDBackend();     // speech-dispatcher
     else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        _backend = new MacSayBackend();      // macOS say-Befehl
+        _backend = new MacSayBackend();      // macOS say command
 }
 ```
 
@@ -525,6 +527,7 @@ public class SpeechDBackend : IScreenReaderBackend
 {
     public bool IsAvailable()
     {
+        // Check if spd-say exists
         try
         {
             var p = Process.Start(new ProcessStartInfo("which", "spd-say")
@@ -553,7 +556,7 @@ public class SpeechDBackend : IScreenReaderBackend
 ```csharp
 public class MacSayBackend : IScreenReaderBackend
 {
-    public bool IsAvailable() => true; // say ist immer auf macOS verfügbar
+    public bool IsAvailable() => true; // say is always available on macOS
 
     public void Say(string text, bool interrupt)
     {
@@ -563,6 +566,7 @@ public class MacSayBackend : IScreenReaderBackend
 
     public void Silence()
     {
+        // Kill any running say process
         try { Process.Start("killall", "say"); } catch { }
     }
 }

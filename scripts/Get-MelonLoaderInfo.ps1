@@ -1,177 +1,144 @@
 <#
 .SYNOPSIS
-    Liest wichtige Werte aus dem MelonLoader-Log aus.
+    Reads the values a MelonLoader mod needs from the MelonLoader log.
 
 .DESCRIPTION
-    Parst die MelonLoader Latest.log Datei und extrahiert:
-    - Game Name (fuer MelonGame-Attribut)
-    - Game Developer (fuer MelonGame-Attribut)
-    - Runtime Type (fuer TargetFramework)
-    - Unity Version
+    Parses MelonLoader\Latest.log and extracts:
+    - Game Name and Game Developer (for the MelonGame attribute in Main.cs)
+    - Runtime Type (net35 or net6: TargetFramework and the MelonLoader DLL folder in the csproj)
+    - Game Type (Mono or Il2Cpp) and Game Arch, if the log has them
+    - Unity version and MelonLoader version
 
-    Die Werte werden screenreader-freundlich ausgegeben.
-
-.PARAMETER LogPath
-    Pfad zur Latest.log Datei.
-    Standard: Sucht im aktuellen Verzeichnis nach MelonLoader\Latest.log
+    Prints the ready-to-copy MelonGame attribute and the csproj values (TargetFramework, RUNTIME_ORDNER).
+    Output is screen-reader friendly: one value per line, no tables.
+    See docs/01-setup-and-tooling.md, "CRITICAL: Before First Build - Check Log!".
 
 .PARAMETER GamePath
-    Pfad zum Spielordner. Wird verwendet um den Log-Pfad zu finden.
+    Game folder. The log is read from <GamePath>\MelonLoader\Latest.log.
+
+.PARAMETER LogPath
+    Path to Latest.log directly. Default: from -GamePath, else game\MelonLoader\Latest.log (the project's
+    "game" junction), else MelonLoader\Latest.log in the current directory.
 
 .EXAMPLE
-    .\Get-MelonLoaderInfo.ps1 -GamePath "C:\Program Files (x86)\Steam\steamapps\common\MeinSpiel"
+    .\scripts\Get-MelonLoaderInfo.ps1 -GamePath "C:\Program Files (x86)\Steam\steamapps\common\MyGame"
 
 .EXAMPLE
-    .\Get-MelonLoaderInfo.ps1 -LogPath "C:\Spiele\MeinSpiel\MelonLoader\Latest.log"
+    .\scripts\Get-MelonLoaderInfo.ps1 -LogPath "C:\Games\MyGame\MelonLoader\Latest.log"
 #>
 
 param(
-    [string]$LogPath,
-    [string]$GamePath
+    [string]$GamePath,
+    [string]$LogPath
 )
 
-# Log-Pfad ermitteln
 if (-not $LogPath) {
     if ($GamePath) {
         $LogPath = Join-Path $GamePath "MelonLoader\Latest.log"
+    } elseif (Test-Path "game\MelonLoader\Latest.log") {
+        $LogPath = "game\MelonLoader\Latest.log"
     } else {
-        # Versuche im aktuellen Verzeichnis
         $LogPath = "MelonLoader\Latest.log"
     }
 }
 
 Write-Host ""
-Write-Host "MelonLoader Log-Parser"
+Write-Host "MelonLoader log reader"
 Write-Host "======================"
 Write-Host ""
 
-# Pruefen ob Log existiert
-if (-not (Test-Path $LogPath)) {
-    Write-Host "FEHLER: Log-Datei nicht gefunden!"
-    Write-Host "Gesuchter Pfad: $LogPath"
-    Write-Host ""
-    Write-Host "Moegliche Ursachen:"
-    Write-Host "- MelonLoader ist nicht installiert"
-    Write-Host "- Das Spiel wurde noch nie mit MelonLoader gestartet"
-    Write-Host "- Der Pfad ist falsch"
-    Write-Host ""
-    Write-Host "Loesung: Starte das Spiel einmal mit MelonLoader, dann fuehre dieses Skript erneut aus."
+if (-not (Test-Path -LiteralPath $LogPath)) {
+    Write-Host "ERROR: Log file not found."
+    Write-Host "   Looked for: $LogPath"
+    Write-Host "   Possible causes: MelonLoader is not installed, the game was never started with it, or the path is wrong."
+    Write-Host "   Fix: Start the game once with MelonLoader, then run this script again with -GamePath."
     exit 1
 }
 
-Write-Host "Log gefunden: $LogPath"
+Write-Host "Log found: $LogPath"
 Write-Host ""
 
-# Log einlesen
-$logContent = Get-Content $LogPath -Raw
+$log = Get-Content -LiteralPath $LogPath -Raw
 
-# Werte extrahieren
-$results = @{
-    GameName = $null
-    Developer = $null
-    RuntimeType = $null
-    UnityVersion = $null
-    MelonLoaderVersion = $null
+# First match of a "Label: value" line (log lines start with a [time] prefix).
+function Get-LogValue {
+    param([string]$Pattern)
+    if ($log -match "(?m)$Pattern[ \t]*(.+?)[ \t]*\r?$") { return $matches[1].Trim() }
+    return $null
 }
 
-# Game Name suchen
-if ($logContent -match "Game Name:\s*(.+?)[\r\n]") {
-    $results.GameName = $matches[1].Trim()
+$gameName = Get-LogValue "Game Name:"
+$developer = Get-LogValue "Game Developer:"
+$runtime = Get-LogValue "Runtime Type:"
+$gameType = Get-LogValue "Game Type:"
+$gameArch = Get-LogValue "Game Arch:"
+$unity = Get-LogValue "Unity Version:"
+if (-not $unity -and $log -match "Game Engine:\s*Unity\s*v?([\d\.]+\w*)") { $unity = $matches[1] }
+$melonVersion = if ($log -match "MelonLoader\s+v([\d\.]+)") { $matches[1] } else { $null }
+
+Write-Host "Values found:"
+Write-Host "-------------"
+Write-Host ""
+foreach ($pair in @(
+        @("Game Name", $gameName), @("Game Developer", $developer), @("Runtime Type", $runtime),
+        @("Game Type", $gameType), @("Game Arch", $gameArch), @("Unity Version", $unity),
+        @("MelonLoader Version", $melonVersion))) {
+    $value = if ($pair[1]) { $pair[1] } else { "NOT FOUND" }
+    Write-Host "$($pair[0]): $value"
 }
 
-# Game Developer suchen
-if ($logContent -match "Game Developer:\s*(.+?)[\r\n]") {
-    $results.Developer = $matches[1].Trim()
-}
-
-# Runtime Type suchen (net35 oder net6)
-if ($logContent -match "Runtime Type:\s*(.+?)[\r\n]") {
-    $results.RuntimeType = $matches[1].Trim()
-}
-
-# Unity Version suchen
-if ($logContent -match "Game Engine:\s*Unity\s*v?([\d\.]+)") {
-    $results.UnityVersion = $matches[1].Trim()
-}
-
-# MelonLoader Version suchen
-if ($logContent -match "MelonLoader\s+v([\d\.]+)") {
-    $results.MelonLoaderVersion = $matches[1].Trim()
-}
-
-# Ergebnisse ausgeben
-Write-Host "Gefundene Werte:"
-Write-Host "----------------"
+Write-Host ""
+Write-Host "For your project:"
+Write-Host "-----------------"
 Write-Host ""
 
-if ($results.GameName) {
-    Write-Host "Spielname: $($results.GameName)"
+if ($developer -and $gameName) {
+    Write-Host "MelonGame attribute (Main.cs), copy exactly, capitalization and spaces included:"
+    Write-Host "[assembly: MelonGame(`"$developer`", `"$gameName`")]"
+    Write-Host "   With a wrong value the mod loads but never initializes, and the log shows no error."
 } else {
-    Write-Host "Spielname: NICHT GEFUNDEN"
-}
-
-if ($results.Developer) {
-    Write-Host "Entwickler: $($results.Developer)"
-} else {
-    Write-Host "Entwickler: NICHT GEFUNDEN"
-}
-
-if ($results.RuntimeType) {
-    Write-Host "Runtime Type: $($results.RuntimeType)"
-} else {
-    Write-Host "Runtime Type: NICHT GEFUNDEN"
-}
-
-if ($results.UnityVersion) {
-    Write-Host "Unity Version: $($results.UnityVersion)"
-}
-
-if ($results.MelonLoaderVersion) {
-    Write-Host "MelonLoader Version: $($results.MelonLoaderVersion)"
-}
-
-Write-Host ""
-Write-Host "Fuer dein Projekt:"
-Write-Host "------------------"
-Write-Host ""
-
-# MelonGame-Attribut
-if ($results.Developer -and $results.GameName) {
-    Write-Host "MelonGame-Attribut (in Main.cs):"
-    Write-Host "[assembly: MelonGame(`"$($results.Developer)`", `"$($results.GameName)`")]"
-} else {
-    Write-Host "WARNUNG: MelonGame-Attribut kann nicht generiert werden - Werte fehlen!"
+    Write-Host "WARNING: Cannot build the MelonGame attribute, Game Name or Game Developer is missing."
+    Write-Host "   Fix: Open the log and copy both values by hand."
 }
 
 Write-Host ""
 
-# TargetFramework
-if ($results.RuntimeType) {
-    $framework = switch ($results.RuntimeType.ToLower()) {
-        "net35" { "net472" }
-        "net6" { "net6.0" }
-        default { "UNBEKANNT - manuell pruefen!" }
+$runtimeKey = if ($runtime) { $runtime.ToLower() } else { "" }
+switch -Regex ($runtimeKey) {
+    "^net35$" {
+        Write-Host "TargetFramework (csproj): <TargetFramework>net472</TargetFramework>"
+        Write-Host "RUNTIME_ORDNER (csproj): net35  (MelonLoader DLLs from MelonLoader\net35\)"
+        Write-Host "IMPORTANT: Use net472, NOT netstandard2.0. With netstandard2.0 the mod fails silently."
     }
-
-    $runtimeFolder = switch ($results.RuntimeType.ToLower()) {
-        "net35" { "net35" }
-        "net6" { "net6" }
-        default { "UNBEKANNT" }
+    "^net6" {
+        Write-Host "TargetFramework (csproj): <TargetFramework>net6.0</TargetFramework>"
+        Write-Host "RUNTIME_ORDNER (csproj): net6  (MelonLoader DLLs from MelonLoader\net6\)"
     }
+    "^$" {
+        Write-Host "WARNING: Cannot determine TargetFramework, Runtime Type is missing."
+        Write-Host "   Fix: Check which of MelonLoader\net35 and MelonLoader\net6 exists in the game folder."
+    }
+    default {
+        Write-Host "WARNING: Unknown Runtime Type '$runtime'. Check TargetFramework by hand (docs/appendix-a-unity-loaders-harmony.md)."
+    }
+}
 
-    Write-Host "TargetFramework (in csproj):"
-    Write-Host "<TargetFramework>$framework</TargetFramework>"
+if ($gameType -match "Il2Cpp") {
     Write-Host ""
-    Write-Host "MelonLoader-DLLs aus Ordner: MelonLoader\$runtimeFolder\"
+    Write-Host "Il2Cpp game: reference the generated assemblies in MelonLoader\Il2CppAssemblies\ instead of <Game>_Data\Managed\ (docs/appendix-a-unity-loaders-harmony.md)."
+}
 
-    if ($results.RuntimeType.ToLower() -eq "net35") {
-        Write-Host ""
-        Write-Host "WICHTIG: Verwende net472, NICHT netstandard2.0!"
-        Write-Host "netstandard2.0 fuehrt zu stillem Fehlschlagen des Mods."
-    }
-} else {
-    Write-Host "WARNUNG: TargetFramework kann nicht bestimmt werden - Runtime Type fehlt!"
+if ($unity -match "^(\d+)\." -and [int]$matches[1] -le 5) {
+    Write-Host ""
+    Write-Host "WARNING: Unity $unity is old. Read docs/appendix-c-legacy-unity.md."
+}
+
+$gameRoot = Split-Path (Split-Path (Resolve-Path -LiteralPath $LogPath).Path -Parent) -Parent
+if ($gameRoot -match '[^\x20-\x7E]') {
+    Write-Host ""
+    Write-Host "WARNING: The game path contains non-ASCII characters: $gameRoot"
+    Write-Host "   Fix: MelonLoader cannot load from such a path. Create a junction from an ASCII path and install MelonLoader through it (docs/01-setup-and-tooling.md, Tooling Pipeline)."
 }
 
 Write-Host ""
-Write-Host "Fertig."
+Write-Host "Done."

@@ -1,386 +1,390 @@
-# [SPIELNAME] - Game API Documentation
+# [GAME NAME] - Game API Documentation
 
-## Übersicht
+## Overview
 
-- **Spiel:** [SPIELNAME]
+- **Game:** [GAME NAME]
 - **Engine:** Unity [VERSION]
-- **Runtime:** [net35/net6 - aus MelonLoader-Log]
-- **Architektur:** [32-Bit/64-Bit]
-- **Entwickler:** [ENTWICKLERNAME - EXAKT aus MelonLoader-Log]
+- **Runtime:** [net35/net6 - from the MelonLoader log]
+- **Architecture:** [32-bit/64-bit]
+- **Developer:** [DEVELOPER NAME - EXACTLY as in the MelonLoader log]
 
 ---
 
-## 1. Singleton-Zugangspunkte
+## 1. Singleton access points
 
-Die wichtigsten statischen Instanzen zum Zugriff auf Spielsysteme.
+The most important static instances for reaching the game's systems.
 
-### Haupt-Controller
+### Main controller
 
-- `[Klassenname].instance` - [Beschreibung]
-  - Wichtige Properties: [Liste]
-  - Wichtige Methoden: [Liste]
+- `[ClassName].instance` - [description]
+  - Important properties: [list]
+  - Important methods: [list]
 
-### UI-Management
+### UI management
 
-- `[UIManager].instance` - [Beschreibung]
+- `[UIManager].instance` - [description]
 
-### Spieler
+### Player
 
-- `[Player].instance` - [Beschreibung]
+- `[Player].instance` - [description]
 
-### [Weitere Kategorien nach Bedarf]
-
----
-
-## 2. Game Key Bindings (Spiel-Tastenbelegungen, NICHT im Mod überschreiben!)
-
-**KRITISCH: Diese Tasten werden vom Spiel verwendet. Der Mod darf sie NICHT anderweitig belegen!**
-
-### Bewegung
-
-- **[Taste]**: [Funktion] (Datei.cs:Zeile)
-
-### Aktionen
-
-- **[Taste]**: [Funktion] (Datei.cs:Zeile)
-
-### Menü-Navigation
-
-- **[Taste]**: [Funktion] (Datei.cs:Zeile)
-
-### Kamera
-
-- **[Taste]**: [Funktion] (Datei.cs:Zeile)
-
-### Maussteuerung
-
-- **Linke Maustaste**: [Funktion]
-- **Rechte Maustaste**: [Funktion]
-- **Mittlere Maustaste**: [Funktion]
-- **Mausrad**: [Funktion]
-
-### Debug/Entwickler-Tasten
-
-- **[Taste]**: [Funktion] - nur wenn [Bedingung]
+### [More categories as needed]
 
 ---
 
-## 3. Safe Mod Keys (sichere Tasten für den Mod)
+## 2. Game Key Bindings (keys the game uses, do NOT override them in the mod!)
 
-Diese Tasten sind im Spiel NICHT belegt und können für Mod-Funktionen genutzt werden.
+**CRITICAL: These keys are used by the game. The mod must NOT bind them to anything else!**
 
-### Reserviert für Accessibility-Mod
+### Movement
 
-- **Tab**: Navigation zwischen UI-Elementen
-- **Enter**: Aktivieren/Bestätigen
-- **Escape**: [Bereits vom Spiel genutzt? Dann NICHT hier listen]
+- **[Key]**: [function] (File.cs:line)
 
-### Frei verfügbar
+### Actions
 
-- **F1**: Hilfe anzeigen
-- **F2-F12**: [Liste der freien F-Tasten]
-- **Ziffernblock 0-9**: Quick-Actions
-- **[Weitere freie Tasten]**
+- **[Key]**: [function] (File.cs:line)
 
-### Mit Vorsicht verwenden
+### Menu navigation
 
-- **[Taste]**: [Grund zur Vorsicht]
+- **[Key]**: [function] (File.cs:line)
 
----
+### Camera
 
-## 4. UI-System
+- **[Key]**: [function] (File.cs:line)
 
-### UI-Basisklassen
+### Mouse
 
-- `[BasisKlasse]` - Gemeinsame Basisklasse für UI-Fenster
-  - Öffnen: `[Methode]`
-  - Schließen: `[Methode]`
-  - Sichtbarkeit prüfen: `[Property/Methode]`
+- **Left mouse button**: [function]
+- **Right mouse button**: [function]
+- **Middle mouse button**: [function]
+- **Mouse wheel**: [function]
 
-### Alle UI-Fenster
+### Debug/developer keys
 
-**Hauptmenü**
-- Klasse: `[Klassenname]`
-- Öffnen: `[Wie wird es geöffnet]`
-- Wichtige Elemente: [Buttons, Listen, etc.]
-- Besonderheiten: [Falls relevant]
-
-**Inventar**
-- Klasse: `[Klassenname]`
-- Öffnen: `[Taste oder Methode]`
-- Wichtige Elemente:
-  - Item-Slots: `[Klassenname für Slots]`
-  - Kategorien: [Falls vorhanden]
-- Besonderheiten: [Falls relevant]
-
-**Einstellungen**
-- Klasse: `[Klassenname]`
-- Öffnen: `[Wie]`
-- Wichtige Elemente: [Slider, Toggles, etc.]
-
-**[Weitere Fenster nach Bedarf...]**
-
-### UI-Navigation
-
-- Zurück-Navigation: `[Wie funktioniert Zurück?]`
-- Fenster-Stack: `[Gibt es einen Stack?]`
-- Modale Dialoge: `[Wie werden Dialoge angezeigt?]`
-
-### Text-Komponenten
-
-- Haupt-Text-Klasse: `[Text/TextMeshProUGUI/etc.]`
-- Text setzen: `[Methode]`
-- Tooltips: `[Klasse und Zugriff]`
+- **[Key]**: [function] - only when [condition]
 
 ---
 
-## 5. Spielmechaniken - Feature-Katalog
+## 3. Safe Mod Keys (keys the mod may use)
 
-### Spieler-Charakter
+These keys are NOT used by the game and can be used for mod functions. Every key the mod reads is declared in `AccessibleKey` with its exact modifiers.
 
-**Bewegung**
-- Klasse: `[Controller-Klasse]`
-- Steuerung: [WASD, Klick, etc.]
-- Besonderheiten: [Sprint, Schleichen, etc.]
+### Reserved for the accessibility mod
 
-**Aktionen**
-- Interagieren: `[Methode/Taste]`
-- Angreifen: `[Methode/Taste]`
-- [Weitere Aktionen]
+- **Tab**: navigation between UI elements
+- **Enter**: activate/confirm
+- **Escape**: [Already used by the game? Then do NOT list it here]
 
-**Status-Werte**
-- Gesundheit: `[Property-Pfad]` - Min/Max: [Werte]
-- [Weitere Status-Werte]
+### Free to use
 
-### Inventar-System
+- **F1**: help
+- **F2-F12**: [list of the free F keys]
+- **Numpad 0-9**: quick actions
+- **[More free keys]**
 
-**Item-Struktur**
-- Basisklasse: `[Klassenname]`
-- Name: `[Property]`
-- Beschreibung: `[Property]`
-- Icon: `[Property]`
-- Stapelbar: `[Property]`
-- [Weitere Item-Eigenschaften]
+### Use with care
 
-**Inventar-Zugriff**
-- Alle Items: `[Wie auf Items zugreifen]`
-- Item hinzufügen: `[Methode]`
-- Item entfernen: `[Methode]`
-- Item verwenden: `[Methode]`
-
-### Interaktions-System
-
-- Interface: `[IInteractable oder ähnlich]`
-- Interaktive Objekte finden: `[Methode]`
-- Interaktion auslösen: `[Methode]`
-- Interaktions-Reichweite: `[Property]`
-
-### Quest/Aufgaben-System
-
-- Aktive Quests: `[Zugriff]`
-- Quest-Ziele: `[Struktur]`
-- Quest-Fortschritt: `[Property]`
-- Quest-Belohnungen: `[Zugriff]`
-
-### Crafting/Bauen
-
-- Rezepte: `[Zugriff auf alle Rezepte]`
-- Rezept-Struktur:
-  - Benötigte Items: `[Property]`
-  - Ergebnis: `[Property]`
-  - Kann hergestellt werden: `[Methode]`
-- Crafting auslösen: `[Methode]`
-
-### Kampf-System
-
-- Angriff: `[Methode]`
-- Schaden berechnen: `[Methode]`
-- Ziel auswählen: `[Methode]`
-- Aktuelle Waffe: `[Property]`
-
-### Dialog-System
-
-- Dialog starten: `[Methode]`
-- Aktueller Dialog-Text: `[Property]`
-- Dialog-Optionen: `[Zugriff]`
-- Option auswählen: `[Methode]`
-
-### Handel/Shop-System
-
-- Shop öffnen: `[Methode]`
-- Verfügbare Waren: `[Zugriff]`
-- Kaufen: `[Methode]`
-- Verkaufen: `[Methode]`
-- Spieler-Währung: `[Zugriff]`
-
-### Karten/Map-System
-
-- Karte öffnen: `[Methode]`
-- Aktuelle Position: `[Property]`
-- Wegpunkte/Marker: `[Zugriff]`
-- Schnellreise: `[Methode]`
-
-### Fähigkeiten/Skills
-
-- Skill-Liste: `[Zugriff]`
-- Skill-Level: `[Property]`
-- Skill verwenden: `[Methode]`
-- Skill-Punkte: `[Property]`
-
-### [Weitere spielspezifische Systeme...]
+- **[Key]**: [reason for caution]
 
 ---
 
-## 6. Status und Benachrichtigungen
+## 4. UI system
 
-### Spieler-Status
+### UI base classes
 
-- Gesundheit: `[Zugriff]`
-- [Weitere Status-Werte mit Zugriffspfad]
+- `[BaseClass]` - common base class for UI windows
+  - Open: `[method]`
+  - Close: `[method]`
+  - Check visibility: `[property/method]`
 
-### Benachrichtigungs-System
+### All UI windows
 
-- Nachricht anzeigen: `[Methode]`
-- Nachricht-Typen: [Info, Warnung, Fehler, etc.]
-- Aktive Nachrichten lesen: `[Zugriff]`
+**Main menu**
+- Class: `[ClassName]`
+- Opened by: `[how is it opened]`
+- Important elements: [buttons, lists, etc.]
+- Special cases: [if relevant]
+
+**Inventory**
+- Class: `[ClassName]`
+- Opened by: `[key or method]`
+- Important elements:
+  - Item slots: `[class name of the slots]`
+  - Categories: [if any]
+- Special cases: [if relevant]
+
+**Settings**
+- Class: `[ClassName]`
+- Opened by: `[how]`
+- Important elements: [sliders, toggles, etc.]
+
+**[More windows as needed...]**
+
+### UI navigation
+
+- Going back: `[how does Back work?]`
+- Window stack: `[is there a stack?]`
+- Modal dialogs: `[how are dialogs shown?]`
+
+### Text components
+
+- Main text class: `[Text/TextMeshProUGUI/etc.]`
+- Set text: `[method]`
+- Tooltips: `[class and access]`
+
+---
+
+## 5. Game mechanics - feature catalog
+
+### Player character
+
+**Movement**
+- Class: `[controller class]`
+- Controls: [WASD, click, etc.]
+- Special cases: [sprint, sneak, etc.]
+
+**Actions**
+- Interact: `[method/key]`
+- Attack: `[method/key]`
+- [More actions]
+
+**Stats**
+- Health: `[property path]` - min/max: [values]
+- [More stats]
+
+### Inventory system
+
+**Item structure**
+- Base class: `[ClassName]`
+- Name: `[property]`
+- Description: `[property]`
+- Icon: `[property]`
+- Stackable: `[property]`
+- [More item properties]
+
+**Inventory access**
+- All items: `[how to reach the items]`
+- Add item: `[method]`
+- Remove item: `[method]`
+- Use item: `[method]`
+
+### Interaction system
+
+- Interface: `[IInteractable or similar]`
+- Find interactable objects: `[method]`
+- Trigger an interaction: `[method]`
+- Interaction range: `[property]`
+
+### Quest/task system
+
+- Active quests: `[access]`
+- Quest objectives: `[structure]`
+- Quest progress: `[property]`
+- Quest rewards: `[access]`
+
+### Crafting/building
+
+- Recipes: `[access to all recipes]`
+- Recipe structure:
+  - Required items: `[property]`
+  - Result: `[property]`
+  - Can be crafted: `[method]`
+- Start crafting: `[method]`
+
+### Combat system
+
+- Attack: `[method]`
+- Calculate damage: `[method]`
+- Select target: `[method]`
+- Current weapon: `[property]`
+
+### Dialog system
+
+- Start dialog: `[method]`
+- Current dialog text: `[property]`
+- Dialog options: `[access]`
+- Choose an option: `[method]`
+
+### Trade/shop system
+
+- Open shop: `[method]`
+- Available goods: `[access]`
+- Buy: `[method]`
+- Sell: `[method]`
+- Player currency: `[access]`
+
+### Map system
+
+- Open map: `[method]`
+- Current position: `[property]`
+- Waypoints/markers: `[access]`
+- Fast travel: `[method]`
+
+### Abilities/skills
+
+- Skill list: `[access]`
+- Skill level: `[property]`
+- Use skill: `[method]`
+- Skill points: `[property]`
+
+### [More game-specific systems...]
+
+---
+
+## 6. Status and notifications
+
+### Player status
+
+- Health: `[access]`
+- [More stats with access path]
+
+### Notification system
+
+- Show message: `[method]`
+- Message types: [info, warning, error, etc.]
+- Read active messages: `[access]`
 
 ### Tooltips
 
-- Tooltip-Klasse: `[Klassenname]`
-- Aktueller Tooltip-Text: `[Property]`
-- Tooltip für Item: `[Methode]`
+- Tooltip class: `[ClassName]`
+- Current tooltip text: `[property]`
+- Tooltip for an item: `[method]`
 
 ---
 
-## 7. Audio-System
+## 7. Audio system
 
-- Haupt-AudioManager: `[Zugriff]`
-- Sound abspielen: `[Methode]`
-- Lautstärke-Einstellungen: `[Zugriff]`
-- [Relevante Sound-Events für Feedback]
-
----
-
-## 8. Speichern und Laden
-
-- Speichern: `[Methode]`
-- Laden: `[Methode]`
-- Spielstand-Pfad: `[Falls bekannt]`
-- Einstellungen speichern: `[Für Mod-Einstellungen relevant]`
+- Main AudioManager: `[access]`
+- Play sound: `[method]`
+- Volume settings: `[access]`
+- [Relevant sound events for feedback]
 
 ---
 
-## 9. Hook-Ziele (Event-Hooks für Harmony-Patches)
+## 8. Saving and loading
 
-### UI-Events (beste Patch-Punkte)
-
-**Fenster öffnen**
-- `[Klasse].[Methode]` - Wird aufgerufen wenn [Beschreibung]
-- Prefix/Postfix empfohlen: [Empfehlung]
-
-**Fenster schließen**
-- `[Klasse].[Methode]` - [Beschreibung]
-
-**Selection ändern**
-
-(Pro Hook: Klasse, Methode, was `__instance` ist, wann er feuert, welche Accessible-Komponente ihn benutzt, durch welche Runtime-Probe bestätigt.)
-- `[Klasse].[Methode]` - Wird aufgerufen wenn Auswahl sich ändert
-
-### Gameplay-Events
-
-**Item aufnehmen**
-- `[Klasse].[Methode]`
-
-**Quest abschließen**
-- `[Klasse].[Methode]`
-
-**[Weitere relevante Events...]**
-
-### Update-Loops
-
-- `[Klasse].Update()` - [Was passiert dort, wann patchen?]
-- `[Klasse].LateUpdate()` - [Beschreibung]
+- Save: `[method]`
+- Load: `[method]`
+- Save game path: `[if known]`
+- Save settings: `[relevant for mod settings]`
 
 ---
 
-## 10. Localization (Lokalisierung)
+## 9. Hook targets (event hooks for Harmony patches)
 
-- Übersetzungs-Methode: `[Methode zum Abrufen von übersetztem Text]`
-- Sprach-Dateien: `[Pfad/Format]`
-- Fallback-Verhalten: `[Was passiert wenn Key nicht gefunden? Gibt die Methode die ID zurück?]`
-- Aktuelle Sprache: `[Klasse.Property, Format z.B. "de", "de-DE", Enum]` → füllt `LocalizationUtils.GetGameLanguageTag()`
-- Spieltext per ID: `[Aufruf]` → füllt `LocalizationUtils.GetGame()`
-- Eingabe-Backend: `[Legacy Input / Input System / beide]` → AccessibleKey (Anhang A, "Input System vs legacy Input")
+(Per hook: class, method, what `__instance` is, when it fires, which Accessible component uses it, which runtime probe confirmed it.)
+
+### UI events (best patch points)
+
+**Window opens**
+- `[Class].[Method]` - called when [description]
+- Prefix/Postfix: [recommendation]
+
+**Window closes**
+- `[Class].[Method]` - [description]
+
+**Selection changes**
+- `[Class].[Method]` - called when the selection changes
+
+### Gameplay events
+
+**Item picked up**
+- `[Class].[Method]`
+
+**Quest completed**
+- `[Class].[Method]`
+
+**[More relevant events...]**
+
+### Update loops
+
+- `[Class].Update()` - [what happens there, when to patch?]
+- `[Class].LateUpdate()` - [description]
 
 ---
 
-## 11. Code-Beispiele
+## 10. Localization
 
-### UI-Fenster prüfen
+- Translation method: `[method that returns translated text]`
+- Language files: `[path/format]`
+- Fallback behavior: `[What happens when a key is not found? Does the method return the id?]`
+- Current language: `[Class.Property, format e.g. "de", "de-DE", enum]` → fills `LocalizationUtils.GetGameLanguageTag()`
+- Game text by id: `[call]` → fills `LocalizationUtils.GetGame()`
+- Input backend: `[legacy Input / Input System / both]` → AccessibleKey (Appendix A, "Input System vs legacy Input")
+
+---
+
+## 11. Code examples
+
+### Check a UI window
 
 ```csharp
-// Prüfen ob ein bestimmtes Fenster offen ist
+// Check whether a specific window is open
 if ([UIManager].instance.[window].activeSelf)
 {
-    // Fenster ist offen
+    // Window is open
 }
 ```
 
-### Auf Spieler-Daten zugreifen
+### Read player data
 
 ```csharp
 var player = [Player].instance;
-string health = $"Gesundheit: {player.[health]}/{player.[maxHealth]}";
+// Spoken text always goes through a LocalizationKey with {0} placeholders
+string health = LocalizationUtils.Format(LocalizationKey.[HEALTH_FORMAT], player.[health], player.[maxHealth]);
 ```
 
-### Items im Inventar durchgehen
+### Go through the inventory items
 
 ```csharp
 foreach (var item in [Inventory].instance.[items])
 {
-    string info = $"{item.[name]}: {item.[count]}";
+    string info = LocalizationUtils.Format(LocalizationKey.[ITEM_COUNT_FORMAT], item.[name], item.[count]);
 }
 ```
 
-### Interaktive Objekte finden
+### Find interactable objects
 
 ```csharp
-// [Beispiel für das spezifische Spiel]
+// [Example for this specific game]
 ```
 
-### Harmony-Patch Beispiel
+### Harmony patch example
+
+Hooks are nested classes inside the Accessible component that uses them (docs/03-architecture.md):
 
 ```csharp
-[HarmonyPatch(typeof([Klasse]), "[Methode]")]
-class [Name]Patch
+[HarmonyPatch(typeof([Class]), "[Method]")]
+private static class [Name]Hook
 {
-    static void Postfix([Parameter])
+    private static void Postfix([Class] __instance)
     {
-        // Nach Original-Methode ausführen
+        // Runs after the original method; never let an exception reach the game
+        AccessibilityMgr.Guard("[Component].[Name]Hook", () => { /* hand over to the component */ });
     }
 }
 ```
 
 ---
 
-## 12. Bekannte Probleme und Workarounds
+## 12. Known problems and workarounds
 
-- **[Problem 1]**: [Beschreibung und Lösung]
-- **[Problem 2]**: [Beschreibung und Lösung]
-
----
-
-## 13. Noch nicht analysiert
-
-Bereiche die noch untersucht werden müssen:
-
-- [ ] [Bereich 1]
-- [ ] [Bereich 2]
-- [ ] [Bereich 3]
+- **[Problem 1]**: [description and solution]
+- **[Problem 2]**: [description and solution]
 
 ---
 
-## Änderungshistorie
+## 13. Not analyzed yet
 
-- **[Datum]**: Initiale Analyse
-- **[Datum]**: [Was wurde hinzugefügt/geändert]
+Areas that still need investigation:
+
+- [ ] [Area 1]
+- [ ] [Area 2]
+- [ ] [Area 3]
+
+---
+
+## Change history
+
+- **[Date]**: Initial analysis
+- **[Date]**: [What was added/changed]
